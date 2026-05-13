@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German to Arabic | Der erste Schultag</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root { --base-font-size: 16px; }
+    main { font-size: var(--base-font-size); }
+    .focusable:focus, button:focus, input:focus, textarea:focus, select:focus, [tabindex]:focus {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+    .karaoke-highlight { background: #fde68a; border-radius: 4px; transition: background .1s; color:#111827; }
+    .blurred { filter: blur(5px); cursor: pointer; user-select: none; }
+    .flashcard-inner { transform-style: preserve-3d; transition: transform .45s ease; }
+    .flashcard.flipped .flashcard-inner { transform: rotateY(180deg); }
+    .flash-face { backface-visibility: hidden; }
+    .flash-back { transform: rotateY(180deg); }
+    .print-only { display: none; }
+    .ltr { direction:ltr; unicode-bidi: isolate; }
+    @media print {
+      body { font-size: 12pt; line-height: 1.8; color: #000; background: #fff; }
+      header, nav, button, aside, input, textarea, select, audio, .no-print, .controls, .interactive-only { display:none !important; }
+      .print-only { display:block !important; }
+      main { max-width:100% !important; padding:0 !important; }
+      .screen-card { box-shadow:none !important; border:0 !important; padding:0 !important; }
+      .page-break { page-break-before: always; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 min-h-screen">
+  <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:right-2 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-4 focus:py-2 focus:rounded">تجاوز إلى المحتوى</a>
+
+  <header class="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-indigo-600 text-white grid place-items-center"><i data-lucide="graduation-cap"></i></div>
+        <div>
+          <h1 class="font-bold text-lg md:text-xl">Der erste Schultag — الألمانية للعربية</h1>
+          <p class="text-xs text-slate-500 dark:text-slate-400">قصة قصيرة تفاعلية لتعلم الألمانية</p>
+        </div>
+      </div>
+      <div id="headerControls" class="flex flex-wrap items-center gap-2"></div>
+    </div>
+  </header>
+
+  <main id="main-content" class="max-w-7xl mx-auto px-4 py-5">
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-4 md:p-5 mb-5">
+      <div class="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
+        <div>
+          <h2 class="text-2xl font-bold">اليوم الأول في المدرسة</h2>
+          <p class="text-slate-600 dark:text-slate-300 mt-1">اقرأ النص الألماني، اسمعه، افهمه بالعربية، وتدرّب على المفردات والقواعد.</p>
+        </div>
+        <div class="controls grid grid-cols-1 sm:grid-cols-3 gap-2 w-full lg:w-auto" id="ttsSettings"></div>
+      </div>
+    </section>
+
+    <nav class="sticky top-[76px] z-30 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur py-2 mb-4" role="tablist" aria-label="أقسام الدرس">
+      <div id="tabs" class="flex gap-2 overflow-x-auto pb-1"></div>
+    </nav>
+
+    <section id="content" aria-live="polite"></section>
+    <section id="printArea" class="print-only"></section>
+  </main>
+
+  <div id="toast" class="fixed bottom-4 left-4 z-50 space-y-2"></div>
+
+<script>
+const textData = {
+  title: "Der erste Schultag",
+  lang: "de-DE",
+  baseLang: "ar",
+  paragraphs: [
+    { target: "Heute ist der erste Schultag. Lena steht mit ihrer Schultüte vor der Schule. Sandra, Susanne und Paul sind auch da. Die Kinder kennen sich aus dem Kindergarten. Jetzt gehen sie in die gleiche Klasse. Sie freuen sich schon auf den Unterricht. Lena freut sich besonders auf das Rechnen. Sandra und Susanne aufs Schreiben. Und Paul? Paul sagt, er freut sich besonders auf die Pausen.", base: "اليوم هو أول يوم دراسي. تقف لينا ومعها حقيبة/مخروط الحلوى المدرسي أمام المدرسة. ساندرا وسوزانه وباول موجودون أيضًا. يعرف الأطفال بعضهم من روضة الأطفال. الآن يذهبون إلى الصف نفسه. إنهم متحمسون للحصة الدراسية. لينا متحمسة بشكل خاص للحساب. وساندرا وسوزانه متحمستان للكتابة. وباول؟ يقول باول إنه متحمس بشكل خاص للاستراحات." },
+    { target: "In der Klasse lernen sie ihren Lehrer, Herrn Mayer, kennen. Herr Mayer ist noch sehr jung und lustig. In der ersten Stunde lernen die Kinder das ABC-Lied. Alle singen begeistert mit.", base: "في الفصل يتعرفون على معلمهم السيد ماير. السيد ماير ما زال شابًا جدًا ومرحًا. في الحصة الأولى يتعلم الأطفال أغنية الحروف الأبجدية. الجميع يغنون بحماس." },
+    { target: "Danach schreibt der Lehrer die ersten Buchstaben an die Tafel: A wie Affe, B wie Banane. Herr Mayer zeichnet einen Affen dazu, der einen Banane frisst. Die Kinder lachen laut. Dann läutet auch schon die Schulglocke.", base: "بعد ذلك يكتب المعلم أول الحروف على السبورة: A مثل قرد، وB مثل موزة. يرسم السيد ماير قردًا يأكل موزة. يضحك الأطفال بصوت عالٍ. ثم يرن جرس المدرسة بالفعل." },
+    { target: "Der erste Tag in der Schule ist vorbei. Vor der Schule warten die Eltern auf die Kinder. Die Kinder erzählen vom ersten Tag. Sie freuen sich schon auf morgen.", base: "انتهى أول يوم في المدرسة. أمام المدرسة ينتظر الآباء الأطفال. يحكي الأطفال عن اليوم الأول. إنهم متحمسون بالفعل للغد." }
+  ],
+  sentences: [
+    { target:"Heute ist der erste Schultag.", base:"اليوم هو أول يوم دراسي.", cefrLevel:"A1" },
+    { target:"Lena steht mit ihrer Schultüte vor der Schule.", base:"تقف لينا ومعها حقيبة/مخروط الحلوى المدرسي أمام المدرسة.", cefrLevel:"A1" },
+    { target:"Sandra, Susanne und Paul sind auch da.", base:"ساندرا وسوزانه وباول موجودون أيضًا.", cefrLevel:"A1" },
+    { target:"Die Kinder kennen sich aus dem Kindergarten.", base:"يعرف الأطفال بعضهم من روضة الأطفال.", cefrLevel:"A2" },
+    { target:"Jetzt gehen sie in die gleiche Klasse.", base:"الآن يذهبون إلى الصف نفسه.", cefrLevel:"A1" },
+    { target:"Sie freuen sich schon auf den Unterricht.", base:"إنهم متحمسون بالفعل للحصة الدراسية.", cefrLevel:"A2" },
+    { target:"Lena freut sich besonders auf das Rechnen.", base:"لينا متحمسة بشكل خاص للحساب.", cefrLevel:"A2" },
+    { target:"Sandra und Susanne aufs Schreiben.", base:"وساندرا وسوزانه متحمستان للكتابة.", cefrLevel:"A2" },
+    { target:"Und Paul?", base:"وباول؟", cefrLevel:"A1" },
+    { target:"Paul sagt, er freut sich besonders auf die Pausen.", base:"يقول باول إنه متحمس بشكل خاص للاستراحات.", cefrLevel:"A2" },
+    { target:"In der Klasse lernen sie ihren Lehrer, Herrn Mayer, kennen.", base:"في الفصل يتعرفون على معلمهم السيد ماير.", cefrLevel:"A2" },
+    { target:"Herr Mayer ist noch sehr jung und lustig.", base:"السيد ماير ما زال شابًا جدًا ومرحًا.", cefrLevel:"A1" },
+    { target:"In der ersten Stunde lernen die Kinder das ABC-Lied.", base:"في الحصة الأولى يتعلم الأطفال أغنية الحروف الأبجدية.", cefrLevel:"A2" },
+    { target:"Alle singen begeistert mit.", base:"الجميع يغنون بحماس.", cefrLevel:"A2" },
+    { target:"Danach schreibt der Lehrer die ersten Buchstaben an die Tafel: A wie Affe, B wie Banane.", base:"بعد ذلك يكتب المعلم أول الحروف على السبورة: A مثل قرد، وB مثل موزة.", cefrLevel:"A2" },
+    { target:"Herr Mayer zeichnet einen Affen dazu, der einen Banane frisst.", base:"يرسم السيد ماير قردًا يأكل موزة.", cefrLevel:"B1" },
+    { target:"Die Kinder lachen laut.", base:"يضحك الأطفال بصوت عالٍ.", cefrLevel:"A1" },
+    { target:"Dann läutet auch schon die Schulglocke.", base:"ثم يرن جرس المدرسة بالفعل.", cefrLevel:"A2" },
+    { target:"Der erste Tag in der Schule ist vorbei.", base:"انتهى أول يوم في المدرسة.", cefrLevel:"A1" },
+    { target:"Vor der Schule warten die Eltern auf die Kinder.", base:"أمام المدرسة ينتظر الآباء الأطفال.", cefrLevel:"A1" },
+    { target:"Die Kinder erzählen vom ersten Tag.", base:"يحكي الأطفال عن اليوم الأول.", cefrLevel:"A2" },
+    { target:"Sie freuen sich schon auf morgen.", base:"إنهم متحمسون بالفعل للغد.", cefrLevel:"A2" }
+  ],
+  dictionary: {
+    "heute": {translation:"اليوم",pos:"adverb",ipa:"/ˈhɔʏtə/",context:"ظرف زمان يستخدم للحديث عن اليوم الحالي.",synonyms:["jetzt","gegenwärtig"],antonyms:["gestern","morgen"],examples:["Heute gehen wir in die Schule.","Heute lernen die Kinder."],conjugation:null},
+    "ist": {translation:"يكون / هو",pos:"verb",ipa:"/ɪst/",context:"تصريف الفعل sein مع المفرد الغائب أو الضمير es.",synonyms:["existiert","bleibt"],antonyms:["fehlt"],examples:["Heute ist der erste Tag.","Herr Mayer ist jung."],conjugation:{present:{ich:"bin",du:"bist",er:"ist",wir:"sind",sie:"sind"},past:{ich:"war",du:"warst",er:"war",wir:"waren",sie:"waren"},future:{ich:"werde sein",du:"wirst sein",er:"wird sein",wir:"werden sein",sie:"werden sein"}}},
+    "der": {translation:"الـ / أداة تعريف للمذكر",pos:"pronoun",ipa:"/deːɐ̯/",context:"أداة تعريف أو ضمير موصول حسب السياق.",synonyms:["dieser"],antonyms:[],examples:["Der Lehrer schreibt.","Der erste Tag ist vorbei."],conjugation:null},
+    "erste": {translation:"الأول",pos:"adjective",ipa:"/ˈeːɐ̯stə/",context:"صفة ترتيبية؛ تتغير نهايتها حسب الجنس والحالة.",synonyms:["anfängliche","früheste"],antonyms:["letzte"],examples:["Der erste Schultag ist schön.","In der ersten Stunde singen sie."],conjugation:null},
+    "schultag": {translation:"يوم دراسي",pos:"noun",ipa:"/ˈʃuːltaːk/",context:"اسم مركب من Schule + Tag.",synonyms:["Unterrichtstag","Schulbeginn"],antonyms:["Ferientag"],examples:["Der Schultag beginnt früh.","Heute ist ein besonderer Schultag."],conjugation:null},
+    "lena": {translation:"لينا",pos:"noun",ipa:"/ˈleːna/",context:"اسم علم مؤنث.",synonyms:["Mädchen","Schülerin"],antonyms:[],examples:["Lena steht vor der Schule.","Lena freut sich auf das Rechnen."],conjugation:null},
+    "steht": {translation:"تقف",pos:"verb",ipa:"/ʃteːt/",context:"تصريف stehen مع المفرد الغائب.",synonyms:["wartet","befindet sich"],antonyms:["sitzt","liegt"],examples:["Lena steht vor der Schule.","Der Lehrer steht an der Tafel."],conjugation:{present:{ich:"stehe",du:"stehst",er:"steht",wir:"stehen",sie:"stehen"},past:{ich:"stand",du:"standst",er:"stand",wir:"standen",sie:"standen"},future:{ich:"werde stehen",du:"wirst stehen",er:"wird stehen",wir:"werden stehen",sie:"werden stehen"}}},
+    "mit": {translation:"مع",pos:"preposition",ipa:"/mɪt/",context:"حرف جر يأخذ الداتيف غالبًا.",synonyms:["zusammen mit","begleitet von"],antonyms:["ohne"],examples:["Lena steht mit ihrer Schultüte.","Die Kinder singen mit."],conjugation:null},
+    "ihrer": {translation:"الخاصة بها",pos:"pronoun",ipa:"/ˈiːʁɐ/",context:"ضمير ملكية مؤنث/داتيف مفرد.",synonyms:["ihre","eigenen"],antonyms:[],examples:["Lena kommt mit ihrer Schultüte.","Sie spricht mit ihrer Freundin."],conjugation:null},
+    "schultüte": {translation:"مخروط الحلوى المدرسي",pos:"noun",ipa:"/ˈʃuːlˌtyːtə/",context:"هدية تقليدية للأطفال في أول يوم مدرسة في البلدان الناطقة بالألمانية.",synonyms:["Zuckertüte","Geschenktüte"],antonyms:[],examples:["Die Schultüte ist bunt.","Lena trägt ihre Schultüte."],conjugation:null},
+    "vor": {translation:"أمام / قبل",pos:"preposition",ipa:"/foːɐ̯/",context:"حرف جر مكاني أو زماني.",synonyms:["davor","gegenüber"],antonyms:["hinter","nach"],examples:["Vor der Schule warten die Eltern.","Vor dem Unterricht spricht Paul."],conjugation:null},
+    "schule": {translation:"مدرسة",pos:"noun",ipa:"/ˈʃuːlə/",context:"اسم مؤنث، غالبًا مع die.",synonyms:["Bildungsstätte","Schulhaus"],antonyms:["Zuhause"],examples:["Die Schule ist groß.","Die Kinder gehen in die Schule."],conjugation:null},
+    "sandra": {translation:"ساندرا",pos:"noun",ipa:"/ˈzandʁa/",context:"اسم علم مؤنث.",synonyms:["Mädchen","Schülerin"],antonyms:[],examples:["Sandra ist auch da.","Sandra freut sich aufs Schreiben."],conjugation:null},
+    "susanne": {translation:"سوزانه",pos:"noun",ipa:"/zuˈzanə/",context:"اسم علم مؤنث.",synonyms:["Mädchen","Schülerin"],antonyms:[],examples:["Susanne kennt Lena.","Susanne geht in die gleiche Klasse."],conjugation:null},
+    "und": {translation:"و",pos:"conjunction",ipa:"/ʊnt/",context:"أداة ربط بين كلمات أو جمل.",synonyms:["sowie","plus"],antonyms:["oder"],examples:["Sandra und Susanne schreiben.","Lena und Paul lachen."],conjugation:null},
+    "paul": {translation:"باول",pos:"noun",ipa:"/paʊl/",context:"اسم علم مذكر.",synonyms:["Junge","Schüler"],antonyms:[],examples:["Paul sagt etwas.","Paul freut sich auf die Pausen."],conjugation:null},
+    "sind": {translation:"يكونون / هم",pos:"verb",ipa:"/zɪnt/",context:"تصريف sein مع الجمع.",synonyms:["existieren","befinden sich"],antonyms:["fehlen"],examples:["Die Kinder sind da.","Sandra und Susanne sind in der Klasse."],conjugation:{present:{ich:"bin",du:"bist",er:"ist",wir:"sind",sie:"sind"},past:{ich:"war",du:"warst",er:"war",wir:"waren",sie:"waren"},future:{ich:"werde sein",du:"wirst sein",er:"wird sein",wir:"werden sein",sie:"werden sein"}}},
+    "auch": {translation:"أيضًا",pos:"adverb",ipa:"/aʊx/",context:"يضيف معنى المشاركة أو الإضافة.",synonyms:["ebenfalls","genauso"],antonyms:["nicht"],examples:["Paul ist auch da.","Die Schulglocke läutet auch schon."],conjugation:null},
+    "da": {translation:"هناك / موجود",pos:"adverb",ipa:"/daː/",context:"يشير إلى الوجود في مكان ما.",synonyms:["dort","anwesend"],antonyms:["weg","abwesend"],examples:["Die Kinder sind da.","Der Lehrer ist da."],conjugation:null},
+    "die": {translation:"الـ / أداة تعريف للمؤنث أو الجمع",pos:"pronoun",ipa:"/diː/",context:"أداة تعريف شائعة للمؤنث والجمع.",synonyms:["diese"],antonyms:[],examples:["Die Kinder lachen.","Die Schule ist groß."],conjugation:null},
+    "kinder": {translation:"أطفال",pos:"noun",ipa:"/ˈkɪndɐ/",context:"جمع Kind.",synonyms:["Schüler","Kleine"],antonyms:["Erwachsene","Eltern"],examples:["Die Kinder kennen sich.","Die Kinder lachen laut."],conjugation:null},
+    "kennen": {translation:"يعرفون",pos:"verb",ipa:"/ˈkɛnən/",context:"يعني معرفة شخص أو مكان، وليس معرفة معلومة فقط.",synonyms:["wissen von","vertraut sein"],antonyms:["nicht kennen","vergessen"],examples:["Die Kinder kennen sich.","Sie kennen den Lehrer noch nicht."],conjugation:{present:{ich:"kenne",du:"kennst",er:"kennt",wir:"kennen",sie:"kennen"},past:{ich:"kannte",du:"kanntest",er:"kannte",wir:"kannten",sie:"kannten"},future:{ich:"werde kennen",du:"wirst kennen",er:"wird kennen",wir:"werden kennen",sie:"werden kennen"}}},
+    "sich": {translation:"نفسه / بعضهم",pos:"pronoun",ipa:"/zɪç/",context:"ضمير انعكاسي يستخدم مع أفعال مثل freuen sich.",synonyms:["einander","selbst"],antonyms:[],examples:["Die Kinder kennen sich.","Sie freuen sich."],conjugation:null},
+    "aus": {translation:"من",pos:"preposition",ipa:"/aʊs/",context:"حرف جر يدل على المصدر أو المكان الأصلي.",synonyms:["von","heraus"],antonyms:["in","hinein"],examples:["Sie kennen sich aus dem Kindergarten.","Paul kommt aus der Klasse."],conjugation:null},
+    "dem": {translation:"الـ / أداة داتيف للمذكر أو المحايد",pos:"pronoun",ipa:"/deːm/",context:"صيغة داتيف من der أو das.",synonyms:["diesem"],antonyms:[],examples:["Aus dem Kindergarten.","Vor dem Unterricht."],conjugation:null},
+    "kindergarten": {translation:"روضة الأطفال",pos:"noun",ipa:"/ˈkɪndɐˌɡaʁtn̩/",context:"مكان قبل المدرسة للأطفال الصغار.",synonyms:["Kita","Vorschule"],antonyms:["Schule"],examples:["Die Kinder kennen sich aus dem Kindergarten.","Der Kindergarten ist nah."],conjugation:null},
+    "jetzt": {translation:"الآن",pos:"adverb",ipa:"/jɛtst/",context:"ظرف يدل على الوقت الحالي.",synonyms:["nun","gerade"],antonyms:["später","früher"],examples:["Jetzt gehen sie in die Klasse.","Jetzt beginnt der Unterricht."],conjugation:null},
+    "gehen": {translation:"يذهبون",pos:"verb",ipa:"/ˈɡeːən/",context:"فعل حركة شائع.",synonyms:["laufen","sich begeben"],antonyms:["bleiben","stehen"],examples:["Jetzt gehen sie in die gleiche Klasse.","Die Kinder gehen zur Schule."],conjugation:{present:{ich:"gehe",du:"gehst",er:"geht",wir:"gehen",sie:"gehen"},past:{ich:"ging",du:"gingst",er:"ging",wir:"gingen",sie:"gingen"},future:{ich:"werde gehen",du:"wirst gehen",er:"wird gehen",wir:"werden gehen",sie:"werden gehen"}}},
+    "sie": {translation:"هم / هي",pos:"pronoun",ipa:"/ziː/",context:"ضمير قد يعني هي أو هم/هن حسب السياق.",synonyms:["diese","alle"],antonyms:[],examples:["Sie freuen sich.","Sie gehen in die Klasse."],conjugation:null},
+    "in": {translation:"في / إلى",pos:"preposition",ipa:"/ɪn/",context:"حرف جر مكاني يأخذ الداتيف أو الأكوزاتيف حسب الحركة.",synonyms:["innerhalb","hinein"],antonyms:["aus","außerhalb"],examples:["In der Klasse lernen sie.","Sie gehen in die Schule."],conjugation:null},
+    "gleiche": {translation:"نفس / متساوية",pos:"adjective",ipa:"/ˈɡlaɪçə/",context:"صفة تدل على التطابق.",synonyms:["selbe","identische"],antonyms:["andere","verschiedene"],examples:["Sie gehen in die gleiche Klasse.","Die gleiche Tafel steht vorne."],conjugation:null},
+    "klasse": {translation:"فصل / صف",pos:"noun",ipa:"/ˈklasə/",context:"تعني غرفة الفصل أو مجموعة التلاميذ.",synonyms:["Schulklasse","Unterrichtsraum"],antonyms:[],examples:["In der Klasse lernen sie.","Die Klasse singt laut."],conjugation:null},
+    "freuen": {translation:"يفرحون / يتحمسون",pos:"verb",ipa:"/ˈfʁɔʏən/",context:"غالبًا يأتي مع الضمير الانعكاسي sich وحرف الجر auf.",synonyms:["begeistern","glücklich sein"],antonyms:["ärgern","traurig sein"],examples:["Sie freuen sich auf den Unterricht.","Paul freut sich auf die Pausen."],conjugation:{present:{ich:"freue mich",du:"freust dich",er:"freut sich",wir:"freuen uns",sie:"freuen sich"},past:{ich:"freute mich",du:"freutest dich",er:"freute sich",wir:"freuten uns",sie:"freuten sich"},future:{ich:"werde mich freuen",du:"wirst dich freuen",er:"wird sich freuen",wir:"werden uns freuen",sie:"werden sich freuen"}}},
+    "schon": {translation:"بالفعل",pos:"adverb",ipa:"/ʃoːn/",context:"يعطي معنى أن الشيء حدث أو موجود مبكرًا أو بالفعل.",synonyms:["bereits","jetzt schon"],antonyms:["noch nicht"],examples:["Sie freuen sich schon.","Dann läutet auch schon die Schulglocke."],conjugation:null},
+    "auf": {translation:"على / إلى / من أجل",pos:"preposition",ipa:"/aʊf/",context:"مع freuen sich auf تعني التطلع إلى شيء.",synonyms:["zu","über"],antonyms:["von"],examples:["Sie freuen sich auf den Unterricht.","Paul freut sich auf die Pausen."],conjugation:null},
+    "den": {translation:"الـ / أداة أكوزاتيف للمذكر",pos:"pronoun",ipa:"/deːn/",context:"صيغة المفعول به لأداة der.",synonyms:["diesen"],antonyms:[],examples:["Auf den Unterricht.","Sie sehen den Lehrer."],conjugation:null},
+    "unterricht": {translation:"حصة / درس",pos:"noun",ipa:"/ˈʊntɐʁɪçt/",context:"التعليم داخل الفصل.",synonyms:["Stunde","Lektion"],antonyms:["Pause","Ferien"],examples:["Sie freuen sich auf den Unterricht.","Der Unterricht beginnt."],conjugation:null},
+    "besonders": {translation:"خصوصًا / بشكل خاص",pos:"adverb",ipa:"/bəˈzɔndɐs/",context:"يستخدم لتأكيد شيء مميز.",synonyms:["vor allem","speziell"],antonyms:["allgemein","kaum"],examples:["Lena freut sich besonders.","Paul mag besonders die Pausen."],conjugation:null},
+    "das": {translation:"الـ / هذا",pos:"pronoun",ipa:"/das/",context:"أداة تعريف للمحايد أو ضمير إشارة.",synonyms:["dieses"],antonyms:[],examples:["Das Rechnen ist leicht.","Das ABC-Lied ist schön."],conjugation:null},
+    "rechnen": {translation:"الحساب",pos:"verb",ipa:"/ˈʁɛçnən/",context:"يمكن أن يأتي كاسم فعلي مع das: das Rechnen.",synonyms:["zählen","kalkulieren"],antonyms:["schätzen"],examples:["Lena freut sich auf das Rechnen.","Wir rechnen in der Schule."],conjugation:{present:{ich:"rechne",du:"rechnest",er:"rechnet",wir:"rechnen",sie:"rechnen"},past:{ich:"rechnete",du:"rechnetest",er:"rechnete",wir:"rechneten",sie:"rechneten"},future:{ich:"werde rechnen",du:"wirst rechnen",er:"wird rechnen",wir:"werden rechnen",sie:"werden rechnen"}}},
+    "schreiben": {translation:"الكتابة",pos:"verb",ipa:"/ˈʃʁaɪbən/",context:"هنا اسم فعلي بعد aufs = auf das.",synonyms:["notieren","verfassen"],antonyms:["lesen","löschen"],examples:["Sandra freut sich aufs Schreiben.","Die Kinder schreiben Buchstaben."],conjugation:{present:{ich:"schreibe",du:"schreibst",er:"schreibt",wir:"schreiben",sie:"schreiben"},past:{ich:"schrieb",du:"schriebst",er:"schrieb",wir:"schrieben",sie:"schrieben"},future:{ich:"werde schreiben",du:"wirst schreiben",er:"wird schreiben",wir:"werden schreiben",sie:"werden schreiben"}}},
+    "sagt": {translation:"يقول",pos:"verb",ipa:"/zaːkt/",context:"تصريف sagen مع المفرد الغائب.",synonyms:["spricht","meint"],antonyms:["schweigt"],examples:["Paul sagt etwas.","Der Lehrer sagt guten Morgen."],conjugation:{present:{ich:"sage",du:"sagst",er:"sagt",wir:"sagen",sie:"sagen"},past:{ich:"sagte",du:"sagtest",er:"sagte",wir:"sagten",sie:"sagten"},future:{ich:"werde sagen",du:"wirst sagen",er:"wird sagen",wir:"werden sagen",sie:"werden sagen"}}},
+    "er": {translation:"هو",pos:"pronoun",ipa:"/eːɐ̯/",context:"ضمير للمفرد المذكر.",synonyms:["dieser","der Junge"],antonyms:["sie"],examples:["Er freut sich auf die Pausen.","Er ist jung."],conjugation:null},
+    "pausen": {translation:"استراحات",pos:"noun",ipa:"/ˈpaʊzn̩/",context:"جمع Pause.",synonyms:["Unterbrechungen","Ruhezeiten"],antonyms:["Unterricht","Stunden"],examples:["Paul freut sich auf die Pausen.","Die Pausen sind kurz."],conjugation:null},
+    "lernen": {translation:"يتعلمون",pos:"verb",ipa:"/ˈlɛʁnən/",context:"فعل أساسي للتعلم أو التعرف على شيء.",synonyms:["studieren","üben"],antonyms:["vergessen"],examples:["In der Klasse lernen sie.","Die Kinder lernen das ABC-Lied."],conjugation:{present:{ich:"lerne",du:"lernst",er:"lernt",wir:"lernen",sie:"lernen"},past:{ich:"lernte",du:"lerntest",er:"lernte",wir:"lernten",sie:"lernten"},future:{ich:"werde lernen",du:"wirst lernen",er:"wird lernen",wir:"werden lernen",sie:"werden lernen"}}},
+    "ihren": {translation:"معلمهم / الخاص بهم",pos:"pronoun",ipa:"/ˈiːʁən/",context:"ضمير ملكية مع مفعول به مذكر.",synonyms:["ihre","eigenen"],antonyms:[],examples:["Sie lernen ihren Lehrer kennen.","Die Kinder sehen ihren Klassenraum."],conjugation:null},
+    "lehrer": {translation:"معلم",pos:"noun",ipa:"/ˈleːʁɐ/",context:"اسم مذكر للشخص الذي يدرّس.",synonyms:["Pädagoge","Dozent"],antonyms:["Schüler"],examples:["Der Lehrer schreibt an die Tafel.","Herr Mayer ist Lehrer."],conjugation:null},
+    "herrn": {translation:"السيد",pos:"noun",ipa:"/hɛʁn/",context:"صيغة حالة من Herr عند استخدامه كلقب.",synonyms:["Mister","Herr"],antonyms:["Frau"],examples:["Sie lernen Herrn Mayer kennen.","Die Kinder grüßen Herrn Mayer."],conjugation:null},
+    "mayer": {translation:"ماير",pos:"noun",ipa:"/ˈmaɪɐ/",context:"اسم عائلة ألماني.",synonyms:["Lehrer","Herr Mayer"],antonyms:[],examples:["Herr Mayer ist lustig.","Herr Mayer zeichnet einen Affen."],conjugation:null},
+    "noch": {translation:"ما زال",pos:"adverb",ipa:"/nɔx/",context:"يدل على استمرار الحالة.",synonyms:["weiterhin","immer noch"],antonyms:["nicht mehr"],examples:["Herr Mayer ist noch jung.","Die Kinder warten noch."],conjugation:null},
+    "sehr": {translation:"جدًا",pos:"adverb",ipa:"/zeːɐ̯/",context:"أداة تقوية للصفة.",synonyms:["äußerst","wirklich"],antonyms:["kaum","wenig"],examples:["Herr Mayer ist sehr jung.","Der Kuchen ist sehr gut."],conjugation:null},
+    "jung": {translation:"شاب",pos:"adjective",ipa:"/jʊŋ/",context:"صفة العمر الصغير.",synonyms:["jugendlich","neu"],antonyms:["alt","erfahren"],examples:["Herr Mayer ist jung.","Die Kinder sind jung."],conjugation:null},
+    "lustig": {translation:"مرح / مضحك",pos:"adjective",ipa:"/ˈlʊstɪç/",context:"صفة للشخص أو الشيء المضحك.",synonyms:["witzig","komisch"],antonyms:["ernst","traurig"],examples:["Herr Mayer ist lustig.","Die Zeichnung ist lustig."],conjugation:null},
+    "stunde": {translation:"حصة / ساعة",pos:"noun",ipa:"/ˈʃtʊndə/",context:"تعني ساعة زمنية أو حصة دراسية.",synonyms:["Unterrichtseinheit","Lektion"],antonyms:["Pause"],examples:["In der ersten Stunde singen sie.","Die Stunde ist kurz."],conjugation:null},
+    "abc-lied": {translation:"أغنية الحروف الأبجدية",pos:"noun",ipa:"/aːbeːˈtseː liːt/",context:"أغنية لتعلم الحروف.",synonyms:["Alphabetlied","Buchstabenlied"],antonyms:[],examples:["Die Kinder lernen das ABC-Lied.","Alle singen das ABC-Lied."],conjugation:null},
+    "alle": {translation:"الجميع",pos:"pronoun",ipa:"/ˈalə/",context:"ضمير يدل على المجموعة كاملة.",synonyms:["jeder","sämtliche"],antonyms:["niemand","keiner"],examples:["Alle singen begeistert mit.","Alle Kinder lachen."],conjugation:null},
+    "singen": {translation:"يغنون",pos:"verb",ipa:"/ˈzɪŋən/",context:"فعل أداء الأغنية بالصوت.",synonyms:["trällern","vorsingen"],antonyms:["schweigen"],examples:["Alle singen begeistert mit.","Die Kinder singen ein Lied."],conjugation:{present:{ich:"singe",du:"singst",er:"singt",wir:"singen",sie:"singen"},past:{ich:"sang",du:"sangst",er:"sang",wir:"sangen",sie:"sangen"},future:{ich:"werde singen",du:"wirst singen",er:"wird singen",wir:"werden singen",sie:"werden singen"}}},
+    "begeistert": {translation:"بحماس",pos:"adverb",ipa:"/bəˈɡaɪstɐt/",context:"يدل على الفرح والحماس أثناء الفعل.",synonyms:["enthusiastisch","freudig"],antonyms:["gelangweilt","lustlos"],examples:["Alle singen begeistert mit.","Die Kinder hören begeistert zu."],conjugation:null},
+    "danach": {translation:"بعد ذلك",pos:"adverb",ipa:"/daˈnaːx/",context:"يربط حدثًا بآخر بعده زمنيًا.",synonyms:["anschließend","später"],antonyms:["vorher","zuerst"],examples:["Danach schreibt der Lehrer.","Danach gehen sie nach Hause."],conjugation:null},
+    "schreibt": {translation:"يكتب",pos:"verb",ipa:"/ʃʁaɪpt/",context:"تصريف schreiben مع المفرد الغائب.",synonyms:["notiert","verfasst"],antonyms:["löscht"],examples:["Der Lehrer schreibt die Buchstaben.","Lena schreibt ihren Namen."],conjugation:{present:{ich:"schreibe",du:"schreibst",er:"schreibt",wir:"schreiben",sie:"schreiben"},past:{ich:"schrieb",du:"schriebst",er:"schrieb",wir:"schrieben",sie:"schrieben"},future:{ich:"werde schreiben",du:"wirst schreiben",er:"wird schreiben",wir:"werden schreiben",sie:"werden schreiben"}}},
+    "buchstaben": {translation:"حروف",pos:"noun",ipa:"/ˈbuːxʃtaːbn̩/",context:"جمع Buchstabe.",synonyms:["Lettern","Schriftzeichen"],antonyms:["Zahlen"],examples:["Der Lehrer schreibt Buchstaben.","Die Buchstaben stehen an der Tafel."],conjugation:null},
+    "an": {translation:"على / عند",pos:"preposition",ipa:"/an/",context:"حرف جر يدل على الملامسة أو القرب.",synonyms:["bei","auf"],antonyms:["weg von"],examples:["An die Tafel schreiben.","Die Kinder stehen an der Schule."],conjugation:null},
+    "tafel": {translation:"سبورة",pos:"noun",ipa:"/ˈtaːfl̩/",context:"لوح الكتابة في الفصل.",synonyms:["Schreibtafel","Board"],antonyms:[],examples:["Der Lehrer schreibt an die Tafel.","Die Tafel ist vorne."],conjugation:null},
+    "wie": {translation:"مثل / كيف",pos:"conjunction",ipa:"/viː/",context:"هنا تعني مثل في أمثلة الحروف.",synonyms:["als","so wie"],antonyms:["anders als"],examples:["A wie Affe.","B wie Banane."],conjugation:null},
+    "affe": {translation:"قرد",pos:"noun",ipa:"/ˈafə/",context:"حيوان؛ يستخدم كمثال على حرف A.",synonyms:["Primat","Tier"],antonyms:[],examples:["A wie Affe.","Der Affe frisst eine Banane."],conjugation:null},
+    "banane": {translation:"موزة",pos:"noun",ipa:"/baˈnaːnə/",context:"فاكهة؛ تستخدم كمثال على حرف B.",synonyms:["Frucht","Obst"],antonyms:[],examples:["B wie Banane.","Der Affe frisst eine Banane."],conjugation:null},
+    "zeichnet": {translation:"يرسم",pos:"verb",ipa:"/ˈtsaɪçnət/",context:"تصريف zeichnen مع المفرد الغائب.",synonyms:["malt","skizziert"],antonyms:["radiert"],examples:["Herr Mayer zeichnet einen Affen.","Lena zeichnet eine Schule."],conjugation:{present:{ich:"zeichne",du:"zeichnest",er:"zeichnet",wir:"zeichnen",sie:"zeichnen"},past:{ich:"zeichnete",du:"zeichnetest",er:"zeichnete",wir:"zeichneten",sie:"zeichneten"},future:{ich:"werde zeichnen",du:"wirst zeichnen",er:"wird zeichnen",wir:"werden zeichnen",sie:"werden zeichnen"}}},
+    "einen": {translation:"واحدًا / أداة نكرة للمذكر المفعول",pos:"pronoun",ipa:"/ˈaɪnən/",context:"أداة نكرة في حالة الأكوزاتيف للمذكر.",synonyms:["irgendeinen"],antonyms:[],examples:["Er zeichnet einen Affen.","Der Affe frisst einen Banane."],conjugation:null},
+    "dazu": {translation:"إلى ذلك / معه",pos:"adverb",ipa:"/daˈtsuː/",context:"يعني إضافة شيء إلى شيء سابق.",synonyms:["zusätzlich","außerdem"],antonyms:["davon weg"],examples:["Herr Mayer zeichnet einen Affen dazu.","Er schreibt ein Wort dazu."],conjugation:null},
+    "frisst": {translation:"يأكل (للحيوان)",pos:"verb",ipa:"/fʁɪst/",context:"يستخدم للأكل عند الحيوانات؛ للبشر غالبًا essen.",synonyms:["isst","verzehrt"],antonyms:["hungert"],examples:["Der Affe frisst eine Banane.","Das Tier frisst Obst."],conjugation:{present:{ich:"fresse",du:"frisst",er:"frisst",wir:"fressen",sie:"fressen"},past:{ich:"fraß",du:"fraßest",er:"fraß",wir:"fraßen",sie:"fraßen"},future:{ich:"werde fressen",du:"wirst fressen",er:"wird fressen",wir:"werden fressen",sie:"werden fressen"}}},
+    "lachen": {translation:"يضحكون",pos:"verb",ipa:"/ˈlaxən/",context:"فعل التعبير عن الضحك.",synonyms:["kichern","grinsen"],antonyms:["weinen","schweigen"],examples:["Die Kinder lachen laut.","Alle lachen über den Affen."],conjugation:{present:{ich:"lache",du:"lachst",er:"lacht",wir:"lachen",sie:"lachen"},past:{ich:"lachte",du:"lachtest",er:"lachte",wir:"lachten",sie:"lachten"},future:{ich:"werde lachen",du:"wirst lachen",er:"wird lachen",wir:"werden lachen",sie:"werden lachen"}}},
+    "laut": {translation:"بصوت عالٍ",pos:"adverb",ipa:"/laʊt/",context:"صفة أو ظرف للصوت المرتفع.",synonyms:["kräftig","hörbar"],antonyms:["leise","still"],examples:["Die Kinder lachen laut.","Die Glocke läutet laut."],conjugation:null},
+    "dann": {translation:"ثم",pos:"adverb",ipa:"/dan/",context:"يرتب الأحداث زمنيًا.",synonyms:["danach","anschließend"],antonyms:["zuvor"],examples:["Dann läutet die Schulglocke.","Dann gehen die Kinder hinaus."],conjugation:null},
+    "läutet": {translation:"يرن",pos:"verb",ipa:"/ˈlɔʏtət/",context:"يستخدم غالبًا مع الجرس.",synonyms:["klingelt","tönt"],antonyms:["verstummt"],examples:["Die Schulglocke läutet.","Dann läutet es laut."],conjugation:{present:{ich:"läute",du:"läutest",er:"läutet",wir:"läuten",sie:"läuten"},past:{ich:"läutete",du:"läutetest",er:"läutete",wir:"läuteten",sie:"läuteten"},future:{ich:"werde läuten",du:"wirst läuten",er:"wird läuten",wir:"werden läuten",sie:"werden läuten"}}},
+    "schulglocke": {translation:"جرس المدرسة",pos:"noun",ipa:"/ˈʃuːlˌɡlɔkə/",context:"جرس يعلن بداية أو نهاية الحصة.",synonyms:["Glocke","Pausenglocke"],antonyms:[],examples:["Die Schulglocke läutet.","Die Schulglocke ist laut."],conjugation:null},
+    "tag": {translation:"يوم",pos:"noun",ipa:"/taːk/",context:"وحدة زمنية أو يوم معين.",synonyms:["Datum","Tageszeit"],antonyms:["Nacht"],examples:["Der erste Tag ist vorbei.","Morgen ist ein neuer Tag."],conjugation:null},
+    "vorbei": {translation:"انتهى",pos:"adverb",ipa:"/fɔʁˈbaɪ/",context:"يدل على انتهاء حدث.",synonyms:["beendet","zu Ende"],antonyms:["beginnend","laufend"],examples:["Der erste Tag ist vorbei.","Die Pause ist vorbei."],conjugation:null},
+    "warten": {translation:"ينتظرون",pos:"verb",ipa:"/ˈvaʁtn̩/",context:"فعل الانتظار، غالبًا مع auf.",synonyms:["abwarten","ausharren"],antonyms:["gehen","handeln"],examples:["Die Eltern warten auf die Kinder.","Paul wartet vor der Schule."],conjugation:{present:{ich:"warte",du:"wartest",er:"wartet",wir:"warten",sie:"warten"},past:{ich:"wartete",du:"wartetest",er:"wartete",wir:"warteten",sie:"warteten"},future:{ich:"werde warten",du:"wirst warten",er:"wird warten",wir:"werden warten",sie:"werden warten"}}},
+    "eltern": {translation:"الوالدان / الآباء",pos:"noun",ipa:"/ˈɛltɐn/",context:"جمع ثابت يشير إلى الأب والأم أو الآباء عمومًا.",synonyms:["Mutter und Vater","Familie"],antonyms:["Kinder"],examples:["Die Eltern warten vor der Schule.","Die Eltern hören zu."],conjugation:null},
+    "erzählen": {translation:"يحكون",pos:"verb",ipa:"/ɛɐ̯ˈtsɛːlən/",context:"فعل سرد قصة أو خبر.",synonyms:["berichten","schildern"],antonyms:["verschweigen"],examples:["Die Kinder erzählen vom ersten Tag.","Lena erzählt von der Klasse."],conjugation:{present:{ich:"erzähle",du:"erzählst",er:"erzählt",wir:"erzählen",sie:"erzählen"},past:{ich:"erzählte",du:"erzähltest",er:"erzählte",wir:"erzählten",sie:"erzählten"},future:{ich:"werde erzählen",du:"wirst erzählen",er:"wird erzählen",wir:"werden erzählen",sie:"werden erzählen"}}},
+    "vom": {translation:"عن الـ / من الـ",pos:"preposition",ipa:"/fɔm/",context:"اختصار von dem.",synonyms:["von dem","über den"],antonyms:[],examples:["Sie erzählen vom ersten Tag.","Er spricht vom Unterricht."],conjugation:null},
+    "morgen": {translation:"غدًا",pos:"adverb",ipa:"/ˈmɔʁɡn̩/",context:"ظرف زمان للمستقبل القريب.",synonyms:["am nächsten Tag","bald"],antonyms:["gestern","heute"],examples:["Sie freuen sich auf morgen.","Morgen beginnt die Schule wieder."],conjugation:null}
+  },
+  grammar: [
+    {title:"أداة التعريف والحالة", explanation:"تتغير أدوات التعريف في الألمانية حسب الجنس والحالة، مثل der للمذكر وdie للمؤنث أو الجمع وdem للداتيف.", examples:["**Der** erste Tag in **der** Schule ist vorbei.","Die Kinder kennen sich aus **dem** Kindergarten."]},
+    {title:"الفعل الانعكاسي sich freuen auf", explanation:"الفعل sich freuen auf يعني يتطلع إلى أو يتحمس لشيء، ويحتاج الضمير الانعكاسي sich وحرف الجر auf.", examples:["Sie **freuen sich** schon **auf** den Unterricht.","Paul sagt, er **freut sich** besonders **auf** die Pausen."]},
+    {title:"ترتيب الجملة الألمانية البسيطة", explanation:"في الجملة الخبرية يأتي الفعل المصرف غالبًا في الموقع الثاني.", examples:["Heute **ist** der erste Schultag.","Danach **schreibt** der Lehrer die ersten Buchstaben an die Tafel."]},
+    {title:"الأسماء المركبة", explanation:"الألمانية تكوّن أسماء طويلة بدمج كلمتين أو أكثر مثل Schule + Tag = Schultag.", examples:["Heute ist der erste **Schultag**.","Dann läutet auch schon die **Schulglocke**."]},
+    {title:"wie بمعنى مثل", explanation:"تستخدم wie للمقارنة أو إعطاء مثال، وهنا تظهر في تعليم الحروف.", examples:["A **wie** Affe, B **wie** Banane.","Herr Mayer zeichnet einen Affen dazu, der einen Banane frisst."]}
+  ],
+  quiz: {
+    mcq: [
+      {question:"من يقف أمام المدرسة ومعه Schultüte؟", options:["A. Lena","B. Herr Mayer","C. Die Eltern","D. Der Affe"], answer:"A", model:"Lena steht mit ihrer Schultüte vor der Schule."},
+      {question:"ما الشيء الذي تتحمس له Lena besonders؟", options:["A. Pausen","B. Rechnen","C. Kaffee","D. Sport"], answer:"B", model:"Lena freut sich besonders auf das Rechnen."},
+      {question:"ماذا يتعلم الأطفال في الحصة الأولى؟", options:["A. Das ABC-Lied","B. Fußball","C. Kochen","D. Einkaufen"], answer:"A", model:"In der ersten Stunde lernen die Kinder das ABC-Lied."},
+      {question:"ماذا يفعل الأطفال عندما يرسم Herr Mayer القرد؟", options:["A. Sie schlafen","B. Sie gehen nach Hause","C. Sie lachen laut","D. Sie schreiben einen Brief"], answer:"C", model:"Die Kinder lachen laut."}
+    ],
+    openEnded: [
+      {question:"لماذا يعرف الأطفال بعضهم؟", modelAnswer:"لأنهم يعرفون بعضهم من روضة الأطفال: Die Kinder kennen sich aus dem Kindergarten."},
+      {question:"ماذا يحدث في نهاية اليوم الأول؟", modelAnswer:"يرن جرس المدرسة، ينتهي اليوم، وينتظر الآباء الأطفال أمام المدرسة."}
+    ],
+    fillInTheBlank: [
+      {template:"Heute ist der erste ___.", blanks:["Schultag"], hint:"noun"},
+      {template:"Die Kinder kennen sich aus dem ___.", blanks:["Kindergarten"], hint:"noun"},
+      {template:"Alle singen ___ mit.", blanks:["begeistert"], hint:"adverb"},
+      {template:"Die Kinder lachen ___.", blanks:["laut"], hint:"adverb"}
+    ]
+  },
+  constructionSentences: [
+    {words:["Heute","ist","der","erste","Schultag"], translation:"اليوم هو أول يوم دراسي."},
+    {words:["Jetzt","gehen","sie","in","die","gleiche","Klasse"], translation:"الآن يذهبون إلى الصف نفسه."},
+    {words:["Alle","singen","begeistert","mit"], translation:"الجميع يغنون بحماس."},
+    {words:["Die","Kinder","lachen","laut"], translation:"يضحك الأطفال بصوت عالٍ."}
+  ]
+};
+
+const tabs = [
+  ["paragraphs","الفقرات","book-open"], ["sentences","الجمل","list"], ["words","كلمة بكلمة","mouse-pointer-click"], ["grammar","القواعد","sparkles"], ["flashcards","البطاقات","layers"], ["quiz","اختبار","circle-help"]
+];
+const storage = {
+  get(k, fallback){ try { return JSON.parse(localStorage.getItem(k)) ?? fallback; } catch { return fallback; } },
+  set(k, v){ localStorage.setItem(k, JSON.stringify(v)); }
+};
+const state = {
+  activeTab: storage.get('langApp_activeTab','paragraphs'),
+  fontSize: Number(storage.get('langApp_fontSize',16)),
+  darkMode: storage.get('langApp_darkMode', false),
+  xp: Number(storage.get('langApp_xp',0)),
+  streak: Number(storage.get('langApp_streak',0)),
+  lastVisit: storage.get('langApp_lastVisit', null),
+  playedSentences: storage.get('langApp_playedSentences', {}),
+  quizResults: storage.get('langApp_quizResults', {}),
+  flashStatus: storage.get('langApp_flashStatus', {}),
+  badges: storage.get('langApp_badges', {}),
+  selectedWord: 'schultag',
+  hideTranslations: false,
+  revealed: {},
+  voices: [], voiceName: storage.get('langApp_voiceName',''), rate: Number(storage.get('langApp_rate',0.9)), pitch: Number(storage.get('langApp_pitch',1)),
+  flashIndex: 0, flashFlipped: false, reviewedThisSession: {},
+  quizIndex: 0, showModel: {}, fillMode: 'typed', fillAnswers: {}, dragAnswers: {}, constructionIndex: 0, constructionCurrent: [],
+  mediaRecorder: null, recordingSentence: null
+};
+
+function todayKey(){ return new Date().toISOString().slice(0,10); }
+function visitReward(){
+  const today = todayKey();
+  if(state.lastVisit !== today){
+    const y = new Date(); y.setDate(y.getDate()-1);
+    state.streak = state.lastVisit === y.toISOString().slice(0,10) ? state.streak + 1 : 1;
+    state.lastVisit = today; addXP(10, false); storage.set('langApp_lastVisit', state.lastVisit); storage.set('langApp_streak', state.streak);
+  }
+}
+function addXP(n, render=true){ state.xp += n; storage.set('langApp_xp', state.xp); checkBadges(); if(render) renderHeader(); }
+function checkBadges(){
+  const known = Object.values(state.flashStatus).filter(v=>v==='known').length;
+  const earned = [
+    ['firstQuiz', Object.keys(state.quizResults).length>0, 'وسام أول اختبار'],
+    ['xp50', state.xp>=50, 'وسام 50 XP'],
+    ['known10', known>=10, 'وسام 10 كلمات معروفة'],
+    ['streak7', state.streak>=7, 'وسام سلسلة 7 أيام']
+  ];
+  earned.forEach(([id, ok, label]) => { if(ok && !state.badges[id]){ state.badges[id]=true; toast('🎉 ' + label); } });
+  storage.set('langApp_badges', state.badges);
+}
+function toast(msg){
+  const el = document.createElement('div');
+  el.className = 'rounded-2xl bg-slate-900 text-white px-4 py-3 shadow-lg';
+  el.textContent = msg; document.getElementById('toast').appendChild(el);
+  setTimeout(()=>el.remove(), 3000);
+}
+function esc(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+function cleanWord(w){ return w.toLowerCase().replace(/[.,:;?!„“\"()]/g,'').replace(/aufs/g,'schreiben'); }
+function posClass(pos){ return ({verb:'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200',noun:'bg-rose-100 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200',adjective:'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-200',adverb:'bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-200',pronoun:'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-200',conjunction:'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100',preposition:'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-100'})[pos] || 'bg-slate-100 text-slate-800'; }
+function cefrClass(l){ return l.startsWith('A') ? 'bg-green-100 text-green-800' : l.startsWith('B') ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'; }
+function allText(){ return textData.paragraphs.map(p=>p.target).join('\n\n'); }
+
+function applyTheme(){ document.documentElement.classList.toggle('dark', state.darkMode); document.documentElement.style.setProperty('--base-font-size', state.fontSize + 'px'); }
+function renderHeader(){
+  const xpPct = state.xp % 50 * 2;
+  document.getElementById('headerControls').innerHTML = `
+    <button data-action="fontDown" class="focusable px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">A−</button>
+    <button data-action="fontUp" class="focusable px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">A+</button>
+    <button data-action="toggleDark" aria-pressed="${state.darkMode}" class="focusable px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700"><i data-lucide="${state.darkMode?'sun':'moon'}" class="inline w-4"></i></button>
+    <div class="min-w-[150px] px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950 border border-indigo-100 dark:border-indigo-900 text-sm">
+      <div class="font-semibold">${state.xp} XP · 🔥 ${state.streak} يوم</div>
+      <div class="h-1.5 bg-white/70 dark:bg-slate-800 rounded-full mt-1 overflow-hidden"><div class="h-full bg-indigo-600" style="width:${xpPct}%"></div></div>
+    </div>
+    <button data-action="playFull" class="focusable px-4 py-2 rounded-xl bg-indigo-600 text-white flex items-center gap-2"><i data-lucide="volume-2" class="w-4"></i><span>تشغيل النص</span></button>`;
+  lucide.createIcons();
+}
+function renderTTSSettings(){
+  const voiceOpts = state.voices.filter(v=>v.lang.startsWith('de')).map(v=>`<option ${v.name===state.voiceName?'selected':''} value="${esc(v.name)}">${esc(v.name)} (${v.lang})</option>`).join('');
+  document.getElementById('ttsSettings').innerHTML = `
+    <label class="text-sm">الصوت<select data-action="voice" class="w-full mt-1 rounded-xl border-slate-200 dark:bg-slate-900">${voiceOpts || '<option>German voice</option>'}</select></label>
+    <label class="text-sm">السرعة <input data-action="rate" type="range" min="0.6" max="1.3" step="0.1" value="${state.rate}" class="w-full"></label>
+    <label class="text-sm">النبرة <input data-action="pitch" type="range" min="0.7" max="1.4" step="0.1" value="${state.pitch}" class="w-full"></label>`;
+}
+function renderTabs(){
+  document.getElementById('tabs').innerHTML = tabs.map(([id,label,icon])=>`<button role="tab" aria-selected="${state.activeTab===id}" data-action="tab" data-tab="${id}" class="focusable whitespace-nowrap px-4 py-2 rounded-2xl border ${state.activeTab===id?'bg-indigo-600 text-white border-indigo-600':'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}"><i data-lucide="${icon}" class="inline w-4 ml-1"></i>${label}</button>`).join('');
+  lucide.createIcons();
+}
+function renderContent(){
+  renderTabs();
+  const map = {paragraphs:renderParagraphs, sentences:renderSentences, words:renderWords, grammar:renderGrammar, flashcards:renderFlashcards, quiz:renderQuiz};
+  document.getElementById('content').innerHTML = map[state.activeTab]();
+  renderPrint(); lucide.createIcons();
+}
+function wrapWords(text, idPrefix){
+  let out='', re=/\S+/g, m; while((m=re.exec(text))){ out += `${text.slice(out.replace(/<[^>]+>/g,'').length, m.index)}<span data-karaoke="${idPrefix}" data-start="${m.index}">${esc(m[0])}</span> `; }
+  return text.split(/(\s+)/).map((t,i)=> /\S/.test(t) ? `<span data-karaoke="${idPrefix}" data-start="${text.indexOf(t, i?text.indexOf(t):0)}">${esc(t)}</span>` : esc(t)).join('');
+}
+function renderParagraphs(){
+  return `<div class="grid gap-4">${textData.paragraphs.map((p,i)=>`<article class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+    <div class="flex flex-wrap gap-2 justify-between mb-3"><h3 class="font-bold">فقرة ${i+1}</h3><div class="controls flex gap-2"><button data-action="play" data-text="${esc(p.target)}" class="focusable px-3 py-1.5 rounded-xl bg-indigo-600 text-white">تشغيل</button><button data-action="karaoke" data-id="p${i}" data-text="${esc(p.target)}" class="focusable px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">Karaoke</button></div></div>
+    <p class="ltr leading-8 text-lg" id="p${i}">${wrapWords(p.target,'p'+i)}</p>
+    <p class="mt-3 leading-8 text-slate-700 dark:text-slate-300">${esc(p.base)}</p>
+  </article>`).join('')}</div>`;
+}
+function renderSentences(){
+  return `<div class="grid gap-3">${textData.sentences.map((s,i)=>`<article class="screen-card rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-4">
+    <div class="flex flex-wrap items-center gap-2 mb-2 controls"><span class="text-xs rounded-full px-2 py-1 ${cefrClass(s.cefrLevel)}">${s.cefrLevel}</span>${state.playedSentences[i]?'<span class="text-green-600">✓ تم الاستماع</span>':''}<button data-action="playSentence" data-index="${i}" class="focusable px-3 py-1.5 rounded-xl bg-indigo-600 text-white">TTS Reference ▶</button><button data-action="record" data-index="${i}" class="focusable px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700"><i data-lucide="mic" class="inline w-4"></i> تسجيل</button></div>
+    <p class="ltr font-semibold text-lg leading-8" id="s${i}">${wrapWords(s.target,'s'+i)}</p>
+    <p data-reveal="sent-${i}" class="mt-2 text-slate-700 dark:text-slate-300 ${state.hideTranslations && !state.revealed['sent-'+i]?'blurred':''}">${esc(s.base)}</p>
+    <div id="rec-${i}" class="mt-2 text-sm"></div>
+  </article>`).join('')}</div>`;
+}
+function renderWords(){
+  const unique = [...new Set(allText().split(/\s+/).map(cleanWord).filter(Boolean))].filter(w=>textData.dictionary[w]);
+  const d = textData.dictionary[state.selectedWord];
+  return `<div class="grid lg:grid-cols-[1fr_360px] gap-4">
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+      <div class="controls flex justify-between gap-2 mb-4"><h3 class="font-bold">المفردات داخل النص</h3><button data-action="hideTranslations" class="focusable px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700">${state.hideTranslations?'إظهار الترجمات':'إخفاء الترجمات'}</button></div>
+      <div class="flex flex-wrap gap-2 ltr">${unique.map(w=>`<button data-action="word" data-word="${w}" class="focusable px-3 py-2 rounded-xl ${posClass(textData.dictionary[w].pos)} ${state.selectedWord===w?'ring-2 ring-indigo-500':''}">${esc(w)}</button>`).join('')}</div>
+    </section>
+    <aside class="sticky top-36 h-fit rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5">
+      ${d ? renderWordPanel(state.selectedWord,d) : '<p>اختر كلمة.</p>'}
+    </aside>
+  </div>`;
+}
+function renderWordPanel(w,d){
+  const conj = d.conjugation ? `<div class="mt-4 overflow-x-auto"><h4 class="font-bold mb-2">تصريف مختصر</h4><table class="w-full text-sm border"><tbody>${Object.entries(d.conjugation).map(([tense,row])=>`<tr><th class="border p-2">${tense}</th>${Object.values(row).map(v=>`<td tabindex="0" class="border p-2 ltr">${esc(v)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>` : '';
+  return `<div>
+    <div class="flex justify-between gap-2"><div><h3 class="ltr text-3xl font-extrabold">${esc(w)}</h3><p class="ltr text-slate-500">${esc(d.ipa)}</p></div><button data-action="play" data-text="${esc(w)}" class="focusable px-3 py-1.5 rounded-xl bg-indigo-600 text-white h-fit">▶</button></div>
+    <span class="inline-block mt-3 text-xs rounded-full px-2 py-1 ${posClass(d.pos)}">${esc(d.pos)}</span>
+    <p data-reveal="word-${w}" class="mt-3 text-lg font-semibold ${state.hideTranslations && !state.revealed['word-'+w]?'blurred':''}">${esc(d.translation)}</p>
+    <p class="mt-2 text-sm text-slate-600 dark:text-slate-300">${esc(d.context)}</p>
+    <h4 class="font-bold mt-4">مرادفات</h4><div class="flex flex-wrap gap-2 mt-1 ltr">${d.synonyms.map(x=>`<span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${esc(x)}</span>`).join('')}</div>
+    ${d.antonyms.length?`<h4 class="font-bold mt-4">أضداد</h4><div class="flex flex-wrap gap-2 mt-1 ltr">${d.antonyms.map(x=>`<span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${esc(x)}</span>`).join('')}</div>`:''}
+    <h4 class="font-bold mt-4">أمثلة إضافية</h4>${d.examples.map(e=>`<blockquote class="ltr border-r-4 border-indigo-400 pr-3 mt-2 text-sm text-slate-700 dark:text-slate-300">${esc(e)}</blockquote>`).join('')}
+    ${conj}
+  </div>`;
+}
+function renderGrammar(){
+  return `<div class="grid gap-4">${textData.grammar.map((g,i)=>`<article class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5"><h3 class="font-bold text-xl">${esc(g.title)}</h3><p class="mt-2 text-slate-700 dark:text-slate-300">${esc(g.explanation)}</p><div class="mt-3 grid gap-2">${g.examples.map(e=>`<div class="ltr rounded-2xl bg-slate-50 dark:bg-slate-900 p-3"><button data-action="play" data-text="${esc(e.replace(/\*\*/g,''))}" class="focusable float-right px-2 py-1 rounded-lg bg-indigo-600 text-white">▶</button>${e}</div>`).join('')}</div></article>`).join('')}</div>`;
+}
+function flashWords(){ return Object.keys(textData.dictionary); }
+function renderFlashcards(){
+  const words = flashWords(), w = words[state.flashIndex] || words[0], d=textData.dictionary[w];
+  const reviewed = Object.keys(state.reviewedThisSession).length;
+  return `<section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5 max-w-3xl mx-auto">
+    <div class="flex justify-between mb-3"><h3 class="font-bold">بطاقات المفردات</h3><span>${state.flashIndex+1} / ${words.length}</span></div>
+    <div class="h-2 rounded-full bg-slate-100 dark:bg-slate-700 mb-5"><div class="h-full rounded-full bg-indigo-600" style="width:${reviewed/words.length*100}%"></div></div>
+    <div tabindex="0" data-action="flip" class="flashcard ${state.flashFlipped?'flipped':''} h-72 cursor-pointer focusable">
+      <div class="flashcard-inner relative w-full h-full">
+        <div class="flash-face absolute inset-0 rounded-3xl border border-slate-200 dark:border-slate-700 grid place-items-center bg-slate-50 dark:bg-slate-900 p-6"><div class="text-center"><p class="ltr text-4xl font-extrabold">${esc(w)}</p><p class="ltr text-slate-500 mt-2">${esc(d.ipa)}</p><button data-action="play" data-text="${esc(w)}" class="mt-5 px-4 py-2 rounded-xl bg-indigo-600 text-white">▶</button></div></div>
+        <div class="flash-face flash-back absolute inset-0 rounded-3xl border border-slate-200 dark:border-slate-700 grid place-items-center bg-indigo-50 dark:bg-indigo-950 p-6"><div class="text-center"><p class="text-3xl font-bold">${esc(d.translation)}</p><span class="inline-block mt-3 text-xs rounded-full px-2 py-1 ${posClass(d.pos)}">${d.pos}</span><p class="ltr mt-4">${esc(d.examples[0])}</p><button data-action="play" data-text="${esc(w)}" class="mt-5 px-4 py-2 rounded-xl bg-indigo-600 text-white">▶</button></div></div>
+      </div>
+    </div>
+    <div class="controls flex flex-wrap justify-center gap-2 mt-5"><button data-action="prevFlash" class="focusable px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">السابق</button><button data-action="known" data-word="${w}" class="focusable px-4 py-2 rounded-xl bg-green-600 text-white">أعرفها +2 XP</button><button data-action="review" data-word="${w}" class="focusable px-4 py-2 rounded-xl bg-orange-500 text-white">تحتاج مراجعة</button><button data-action="nextFlash" class="focusable px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700">التالي</button></div>
+  </section>`;
+}
+function renderQuiz(){
+  const q = textData.quiz.mcq[state.quizIndex];
+  return `<div class="grid gap-4">
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5"><h3 class="font-bold text-xl">أ. اختيار من متعدد</h3><p class="mt-3 font-semibold">${esc(q.question)}</p><div class="grid sm:grid-cols-2 gap-2 mt-4" role="radiogroup">${q.options.map(opt=>{const letter=opt[0], res=state.quizResults[state.quizIndex], cls=res? (letter===q.answer?'bg-green-100 border-green-500 text-green-900':res.chosen===letter?'bg-red-100 border-red-500 text-red-900':'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'):'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700'; return `<button data-action="answer" data-choice="${letter}" class="focusable text-right rounded-2xl border p-3 ${cls}">${esc(opt)}</button>`}).join('')}</div><div class="controls flex gap-2 mt-4"><button data-action="prevQ" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">السابق</button><button data-action="nextQ" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">التالي</button><button data-action="model" data-id="mcq" class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-700">إظهار الإجابة النموذجية</button></div>${state.showModel.mcq?`<p class="ltr mt-3 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950">${esc(q.model)}</p>`:''}</section>
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5"><h3 class="font-bold text-xl">ب. أسئلة مفتوحة</h3>${textData.quiz.openEnded.map((o,i)=>`<div class="mt-4"><label class="font-semibold">${esc(o.question)}</label><textarea class="w-full mt-2 rounded-2xl border-slate-200 dark:bg-slate-900" rows="3"></textarea><button data-action="model" data-id="open${i}" class="mt-2 px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-700">إظهار الإجابة</button>${state.showModel['open'+i]?`<p class="mt-2 p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950">${esc(o.modelAnswer)}</p>`:''}</div>`).join('')}</section>
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5"><h3 class="font-bold text-xl">ج. أكمل الفراغ</h3><button data-action="toggleFill" class="controls mt-2 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">الوضع: ${state.fillMode==='typed'?'كتابة':'سحب وإفلات'}</button>${state.fillMode==='typed'?renderTypedFill():renderDragFill()}</section>
+    <section class="screen-card rounded-3xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 p-5"><h3 class="font-bold text-xl">د. ترتيب الجملة</h3>${renderConstruction()}</section>
+  </div>`;
+}
+function renderTypedFill(){ return `<div class="grid gap-3 mt-4">${textData.quiz.fillInTheBlank.map((f,i)=>`<div class="ltr p-3 rounded-2xl bg-slate-50 dark:bg-slate-900">${esc(f.template).replace('___',`<input data-fill="${i}" class="w-32 rounded-lg border mx-1 px-2 py-1 dark:bg-slate-800" placeholder="${f.hint}">`)}</div>`).join('')}<button data-action="checkFill" class="controls w-fit px-4 py-2 rounded-xl bg-indigo-600 text-white">تحقق</button></div>`; }
+function renderDragFill(){ const words=textData.quiz.fillInTheBlank.flatMap(f=>f.blanks).sort(()=>Math.random()-.5); return `<div class="mt-4 grid gap-3">${textData.quiz.fillInTheBlank.map((f,i)=>`<div class="ltr p-3 rounded-2xl bg-slate-50 dark:bg-slate-900">${esc(f.template).replace('___',`<span data-drop-fill="${i}" class="inline-block min-w-28 border-b-2 border-indigo-500 px-2 py-1">${state.dragAnswers[i]||''}</span>`)}</div>`).join('')}<div class="flex flex-wrap gap-2 ltr">${words.map(w=>`<button draggable="true" data-drag-word="${w}" class="px-3 py-2 rounded-xl bg-indigo-100 text-indigo-900">${w}</button>`).join('')}</div><button data-action="checkFill" class="controls w-fit px-4 py-2 rounded-xl bg-indigo-600 text-white">تحقق</button></div>`; }
+function renderConstruction(){ const item=textData.constructionSentences[state.constructionIndex]; const scrambled=[...item.words].sort(()=>Math.random()-.5); if(!state.constructionCurrent.length) state.constructionCurrent=[]; return `<p class="mt-2">${esc(item.translation)}</p><div data-con-drop="1" class="ltr min-h-16 mt-3 p-3 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-600 flex flex-wrap gap-2">${state.constructionCurrent.map((w,i)=>`<span class="px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-700">${esc(w)}</span>`).join('')}</div><div class="ltr mt-3 flex flex-wrap gap-2">${scrambled.map(w=>`<button draggable="true" data-con-word="${esc(w)}" class="px-3 py-2 rounded-xl bg-indigo-100 text-indigo-900">${esc(w)}</button>`).join('')}</div><div class="controls flex gap-2 mt-4"><button data-action="checkCon" class="px-3 py-2 rounded-xl bg-indigo-600 text-white">تحقق</button><button data-action="showCon" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">إظهار الإجابة</button><button data-action="prevCon" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">السابق</button><button data-action="nextCon" class="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700">التالي</button></div>`; }
+function renderPrint(){
+  const vocab = Object.entries(textData.dictionary).map(([w,d])=>`<tr><td>${esc(w)}</td><td>${esc(d.translation)}</td><td>${esc(d.pos)}</td><td>${esc(d.context)}</td></tr>`).join('');
+  document.getElementById('printArea').innerHTML = `<h1>${textData.title}</h1>${textData.paragraphs.map(p=>`<h2>German</h2><p dir="ltr">${esc(p.target)}</p><h2>Arabic</h2><p>${esc(p.base)}</p>`).join('')}<div class="page-break"><h2>Vocabulary Reference</h2><table border="1" cellspacing="0" cellpadding="6"><thead><tr><th>Word</th><th>Translation</th><th>Part of Speech</th><th>Context Note</th></tr></thead><tbody>${vocab}</tbody></table></div>`;
+}
+
+function speak(text, karaokeId=null){
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text); u.lang='de-DE'; u.rate=state.rate; u.pitch=state.pitch;
+  const voice = state.voices.find(v=>v.name===state.voiceName) || state.voices.find(v=>v.lang.startsWith('de'));
+  if(voice) u.voice = voice;
+  if(karaokeId){ u.onboundary = e => { document.querySelectorAll(`[data-karaoke="${karaokeId}"]`).forEach(x=>x.classList.remove('karaoke-highlight')); const spans=[...document.querySelectorAll(`[data-karaoke="${karaokeId}"]`)]; const hit=spans.reduce((prev,cur)=> Number(cur.dataset.start)<=e.charIndex?cur:prev, null); if(hit) hit.classList.add('karaoke-highlight'); }; u.onend=()=>document.querySelectorAll(`[data-karaoke="${karaokeId}"]`).forEach(x=>x.classList.remove('karaoke-highlight')); }
+  speechSynthesis.speak(u);
+}
+async function startRecording(i){
+  if(state.mediaRecorder && state.mediaRecorder.state==='recording'){ state.mediaRecorder.stop(); return; }
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:true}); const chunks=[]; const rec=new MediaRecorder(stream); state.mediaRecorder=rec; state.recordingSentence=i;
+    rec.ondataavailable=e=>chunks.push(e.data); rec.onstop=()=>{ const blob=new Blob(chunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob); const holder=document.getElementById('rec-'+i); if(holder) holder.innerHTML=`<p>Your Recording ▶</p><audio controls src="${url}"></audio>`; stream.getTracks().forEach(t=>t.stop()); };
+    rec.start(); toast('بدأ التسجيل. اضغط تسجيل مرة أخرى للإيقاف.');
+  } catch(e){ toast('تعذر الوصول إلى الميكروفون.'); }
+}
+
+function initVoices(){ state.voices = speechSynthesis.getVoices(); if(!state.voiceName){ const v=state.voices.find(v=>v.lang.startsWith('de')); if(v) state.voiceName=v.name; } renderTTSSettings(); }
+function persist(){ storage.set('langApp_activeTab', state.activeTab); storage.set('langApp_fontSize', state.fontSize); storage.set('langApp_darkMode', state.darkMode); storage.set('langApp_playedSentences', state.playedSentences); storage.set('langApp_quizResults', state.quizResults); storage.set('langApp_flashStatus', state.flashStatus); storage.set('langApp_streak', state.streak); }
+function rerender(){ applyTheme(); renderHeader(); renderTTSSettings(); renderContent(); persist(); }
+
+document.addEventListener('click', e=>{
+  const t=e.target.closest('[data-action]');
+  if(!t){ const r=e.target.closest('[data-reveal]'); if(r){ state.revealed[r.dataset.reveal]=true; renderContent(); } return; }
+  const a=t.dataset.action;
+  if(a==='tab'){ state.activeTab=t.dataset.tab; state.constructionCurrent=[]; }
+  if(a==='fontDown') state.fontSize=Math.max(14,state.fontSize-1);
+  if(a==='fontUp') state.fontSize=Math.min(20,state.fontSize+1);
+  if(a==='toggleDark') state.darkMode=!state.darkMode;
+  if(a==='playFull') speak(allText());
+  if(a==='play') speak(t.dataset.text);
+  if(a==='karaoke') speak(t.dataset.text, t.dataset.id);
+  if(a==='playSentence'){ const i=t.dataset.index; state.playedSentences[i]=true; speak(textData.sentences[i].target, 's'+i); }
+  if(a==='record') startRecording(t.dataset.index);
+  if(a==='word') state.selectedWord=t.dataset.word;
+  if(a==='hideTranslations') state.hideTranslations=!state.hideTranslations;
+  if(a==='flip') state.flashFlipped=!state.flashFlipped;
+  if(a==='prevFlash'){ state.flashIndex=(state.flashIndex-1+flashWords().length)%flashWords().length; state.flashFlipped=false; }
+  if(a==='nextFlash'){ state.flashIndex=(state.flashIndex+1)%flashWords().length; state.flashFlipped=false; }
+  if(a==='known'){ if(state.flashStatus[t.dataset.word]!=='known') addXP(2,false); state.flashStatus[t.dataset.word]='known'; state.reviewedThisSession[t.dataset.word]=true; state.flashIndex=(state.flashIndex+1)%flashWords().length; state.flashFlipped=false; }
+  if(a==='review'){ state.flashStatus[t.dataset.word]='review'; state.reviewedThisSession[t.dataset.word]=true; state.flashIndex=(state.flashIndex+1)%flashWords().length; state.flashFlipped=false; }
+  if(a==='answer'){ const idx=state.quizIndex; if(!state.quizResults[idx]){ state.quizResults[idx]={chosen:t.dataset.choice, correct:t.dataset.choice===textData.quiz.mcq[idx].answer}; if(state.quizResults[idx].correct) addXP(5,false); } }
+  if(a==='prevQ') state.quizIndex=(state.quizIndex-1+textData.quiz.mcq.length)%textData.quiz.mcq.length;
+  if(a==='nextQ') state.quizIndex=(state.quizIndex+1)%textData.quiz.mcq.length;
+  if(a==='model') state.showModel[t.dataset.id]=!state.showModel[t.dataset.id];
+  if(a==='toggleFill') state.fillMode=state.fillMode==='typed'?'drag':'typed';
+  if(a==='checkFill') toast('تم التحقق: راجع الكلمات الصحيحة في النموذج/المفاتيح.');
+  if(a==='checkCon'){ const item=textData.constructionSentences[state.constructionIndex]; toast(state.constructionCurrent.join(' ')===item.words.join(' ') ? 'إجابة صحيحة!' : 'راجع ترتيب الكلمات.'); }
+  if(a==='showCon') state.constructionCurrent=[...textData.constructionSentences[state.constructionIndex].words];
+  if(a==='prevCon'){ state.constructionIndex=(state.constructionIndex-1+textData.constructionSentences.length)%textData.constructionSentences.length; state.constructionCurrent=[]; }
+  if(a==='nextCon'){ state.constructionIndex=(state.constructionIndex+1)%textData.constructionSentences.length; state.constructionCurrent=[]; }
+  rerender();
+});
+document.addEventListener('input', e=>{ const a=e.target.dataset.action; if(a==='voice'){ state.voiceName=e.target.value; storage.set('langApp_voiceName',state.voiceName); } if(a==='rate'){ state.rate=Number(e.target.value); storage.set('langApp_rate',state.rate); } if(a==='pitch'){ state.pitch=Number(e.target.value); storage.set('langApp_pitch',state.pitch); } });
+document.addEventListener('keydown', e=>{ if(state.activeTab==='flashcards' && e.key==='ArrowLeft'){ state.flashIndex=(state.flashIndex-1+flashWords().length)%flashWords().length; state.flashFlipped=false; rerender(); } if(state.activeTab==='flashcards' && e.key==='ArrowRight'){ state.flashIndex=(state.flashIndex+1)%flashWords().length; state.flashFlipped=false; rerender(); } if((e.key==='Enter'||e.key===' ') && e.target.dataset.action==='flip'){ e.preventDefault(); state.flashFlipped=!state.flashFlipped; rerender(); } });
+document.addEventListener('dragstart', e=>{ if(e.target.dataset.dragWord) e.dataTransfer.setData('fill', e.target.dataset.dragWord); if(e.target.dataset.conWord) e.dataTransfer.setData('con', e.target.dataset.conWord); });
+document.addEventListener('dragover', e=>{ if(e.target.closest('[data-drop-fill]') || e.target.closest('[data-con-drop]')) e.preventDefault(); });
+document.addEventListener('drop', e=>{ const fill=e.target.closest('[data-drop-fill]'); const con=e.target.closest('[data-con-drop]'); if(fill){ e.preventDefault(); state.dragAnswers[fill.dataset.dropFill]=e.dataTransfer.getData('fill'); rerender(); } if(con){ e.preventDefault(); const w=e.dataTransfer.getData('con'); if(w) state.constructionCurrent.push(w); rerender(); } });
+
+visitReward(); applyTheme(); renderHeader(); renderTTSSettings(); renderContent(); initVoices(); speechSynthesis.onvoiceschanged=initVoices;
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

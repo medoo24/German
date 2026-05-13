@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="de" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deutsch Lernen — تعلم الألمانية</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=DM+Sans:wght@300;400;500&family=Amiri:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #F5F0E8;
+    --surface: #FDFAF4;
+    --ink: #1C1814;
+    --ink-2: #5A4E3C;
+    --accent: #C8460A;
+    --accent-2: #2E5C3E;
+    --gold: #B8892A;
+    --border: rgba(92,72,44,0.18);
+    --radius: 4px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem 1rem;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* Subtle grid texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 640px;
+    width: 100%;
+    text-align: center;
+  }
+
+  /* Top label */
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--gold);
+    font-weight: 500;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: '';
+    display: block;
+    height: 1px;
+    width: 40px;
+    background: var(--gold);
+    opacity: 0.6;
+  }
+
+  /* Title */
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.2rem, 6vw, 3.4rem);
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--ink);
+    margin-bottom: 0.5rem;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: var(--ink-2);
+    margin-bottom: 3rem;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+  }
+  .subtitle span {
+    font-family: 'Amiri', serif;
+    font-size: 16px;
+  }
+
+  /* Divider */
+  .divider {
+    width: 60px;
+    height: 2px;
+    background: var(--accent);
+    margin: 0 auto 3rem;
+  }
+
+  /* Cards grid */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 32px rgba(28,24,20,0.08);
+    margin-bottom: 2rem;
+  }
+
+  .card {
+    background: var(--surface);
+    padding: 2rem 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+    transition: background 0.2s, transform 0.15s;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    background: #FFF8EE;
+  }
+
+  .card:active { transform: scale(0.99); }
+
+  .card-topic {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: var(--accent);
+  }
+
+  .card-de {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.25;
+  }
+
+  .card-lang {
+    font-size: 12px;
+    color: var(--ink-2);
+    font-weight: 300;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .lang-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+  }
+
+  .lang-en {
+    background: #E8EFF8;
+    color: #1A3D6E;
+  }
+
+  .lang-ar {
+    background: #F0EAD8;
+    color: #5C3D11;
+    font-family: 'Amiri', serif;
+    font-size: 12px;
+  }
+
+  .card-arrow {
+    position: absolute;
+    bottom: 1.25rem;
+    right: 1.25rem;
+    font-size: 18px;
+    color: var(--border);
+    transition: color 0.2s, right 0.2s;
+  }
+
+  .card:hover .card-arrow {
+    color: var(--accent);
+    right: 1rem;
+  }
+
+  /* Bottom note */
+  .note {
+    font-size: 12px;
+    color: var(--ink-2);
+    opacity: 0.7;
+    font-weight: 300;
+  }
+
+  /* Fade-in animation */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .eyebrow { animation: fadeUp 0.5s ease both; }
+  h1       { animation: fadeUp 0.5s 0.08s ease both; }
+  .subtitle{ animation: fadeUp 0.5s 0.14s ease both; }
+  .divider { animation: fadeUp 0.5s 0.18s ease both; }
+  .grid    { animation: fadeUp 0.5s 0.24s ease both; }
+  .note    { animation: fadeUp 0.5s 0.32s ease both; }
+
+  @media (max-width: 480px) {
+    .grid { grid-template-columns: 1fr; }
+    .card { padding: 1.5rem 1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <p class="eyebrow">Deutsch Lernen</p>
+
+  <h1>Einfaches Deutsch</h1>
+  <p class="subtitle">ألمانية بسيطة · <span>تعلّم من خلال المواضيع اليومية</span></p>
+
+  <div class="divider"></div>
+
+  <div class="grid">
+
+    <!-- Card 1 -->
+    <a class="card" href="preview (1).html">
+      <span class="card-topic">Thema 1</span>
+      <span class="card-de">Einkaufen im Supermarkt</span>
+      <span class="card-lang">
+        <span class="lang-badge lang-en">English</span>
+        English version
+      </span>
+      <span class="card-arrow">→</span>
+    </a>
+
+    <!-- Card 2 -->
+    <a class="card" href="preview (3).html">
+      <span class="card-topic">Thema 1</span>
+      <span class="card-de">Einkaufen im Supermarkt</span>
+      <span class="card-lang">
+        <span class="lang-badge lang-ar">عربي</span>
+        النسخة العربية
+      </span>
+      <span class="card-arrow">→</span>
+    </a>
+
+    <!-- Card 3 -->
+    <a class="card" href="preview (2).html">
+      <span class="card-topic">Thema 2</span>
+      <span class="card-de">In der Schule</span>
+      <span class="card-lang">
+        <span class="lang-badge lang-en">English</span>
+        English version
+      </span>
+      <span class="card-arrow">→</span>
+    </a>
+
+    <!-- Card 4 -->
+    <a class="card" href="preview (4).html">
+      <span class="card-topic">Thema 2</span>
+      <span class="card-de">In der Schule</span>
+      <span class="card-lang">
+        <span class="lang-badge lang-ar">عربي</span>
+        النسخة العربية
+      </span>
+      <span class="card-arrow">→</span>
+    </a>
+
+  </div>
+
+  <p class="note">اختر أي موضوع للبدء · Wähle ein Thema zum Starten</p>
+
+</div>
+
+</body>
+</html>

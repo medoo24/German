@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Einkaufen im Supermarkt — German to English Learning App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>tailwind.config = { darkMode: 'class' };</script>
+  <style>
+    :root { --base-font-size: 16px; }
+    main { font-size: var(--base-font-size); }
+    .focus-ring:focus, button:focus, input:focus, textarea:focus, select:focus, [tabindex]:focus { outline: 2px solid currentColor; outline-offset: 2px; }
+    .karaoke-highlight { background:#fde68a; border-radius:3px; transition:background .1s; color:#111827; }
+    .card-inner { transition: transform .55s; transform-style: preserve-3d; }
+    .flipped .card-inner { transform: rotateY(180deg); }
+    .card-face { backface-visibility: hidden; }
+    .card-back { transform: rotateY(180deg); }
+    .blurred { filter: blur(5px); cursor: pointer; user-select: none; }
+    .print-only { display:none; }
+    .drop-slot { min-height: 46px; }
+    @media print {
+      header, nav, button, aside, .controls, .quiz-ui, .flashcard-controls, .screen-only, select, input, textarea, audio { display: none !important; }
+      body { font-size:12pt; line-height:1.8; color:#000; background:#fff; }
+      main { display:block !important; font-size:12pt; }
+      .print-only { display:block !important; }
+      .print-vocab { page-break-before: always; }
+      .print-hide { display:none !important; }
+      .print-card { border:0 !important; box-shadow:none !important; padding:0 !important; }
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+<a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50 focus:bg-white focus:text-slate-900 focus:px-4 focus:py-2 focus:rounded-lg">Skip to content</a>
+<header class="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur dark:bg-slate-900/90 dark:border-slate-700">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="p-2 rounded-2xl bg-indigo-100 dark:bg-indigo-900"><i data-lucide="languages" class="w-6 h-6"></i></div>
+      <div>
+        <h1 class="font-bold text-xl">Einkaufen im Supermarkt</h1>
+        <p class="text-sm text-slate-500 dark:text-slate-400">German → English interactive one-page lesson</p>
+      </div>
+    </div>
+    <div id="headerControls" class="flex flex-wrap items-center gap-2"></div>
+  </div>
+</header>
+<nav class="sticky top-[73px] z-30 bg-slate-50/95 dark:bg-slate-900/95 border-b border-slate-200 dark:border-slate-700 screen-only" aria-label="Lesson tabs">
+  <div id="tabs" class="max-w-7xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto" role="tablist"></div>
+</nav>
+<main id="main-content" class="max-w-7xl mx-auto px-4 py-6"></main>
+<div id="toast" aria-live="polite" class="fixed right-4 bottom-4 z-50 space-y-2"></div>
+<script>
+const textData = {
+  title: "Einkaufen im Supermarkt",
+  fullText: `Frau Meier geht heute in den Supermarkt. Ihr Mann ist nicht zu Hause und sie nimmt den Bus. An der Haltestelle trifft sie ihre Freundin Frau Schmidt. Frau Schmidt will auch in den Supermarkt.\n\nFrau Müller: “Das ist super! Dann fahren wir zusammen!”.\nFrau Schmidt: “Ja, wir kaufen ein. Danach trinken wir Kaffee und essen Kuchen. Im Café neben dem Supermarkt gibt es sehr guten Kuchen.”\nFrau Meier: “Gute Idee!”.\n\nFrau Meier und Frau Schmidt gehen zusammen in den Supermarkt.\n\nFrau Meier: “Ich brauche Tomaten. Mein Mann will Salat essen. Ich nehme zehn Tomaten.”\nFrau Schmidt: “Tomaten sind gut. Ich kaufe fünf Tomaten. Da ist auch Kopfsalat.”\n\nFrau Meier nimmt keinen Kopfsalat. Sie nimmt aber zwei Gurken. Frau Meier kauft auch ein Kilo Zwiebeln. Frau Schmidt will Brot kaufen.\n\nFrau Meier: “Das Brot ist nicht schön. Ich kaufe Brot in der Bäckerei. Aber die Schokolade hier ist gut. Sie kostet nur 50 Cent. Ich nehme drei Tafeln Schokolade.”\nFrau Schmidt: “Da ist noch ein Sonderangebot. Mineralwasser und Orangensaft sind billig.”\nFrau Meier: “Orangensaft habe ich zu Hause. Aber ich brauche fünf Flaschen Mineralwasser.”\n\nFrau Schmidt kauft nur drei Flaschen Mineralwasser. Frau Meier und Frau Schmidt gehen an die Kasse. Dann gehen sie ins Café. Frau Schmidt trinkt eine Tasse Tee. Frau Meier mag lieber Kaffee. Sie bestellen zwei Stücke Schokoladenkuchen. Sie fahren mit dem Bus nach Hause.`,
+  paragraphs: [
+    {target:"Frau Meier geht heute in den Supermarkt. Ihr Mann ist nicht zu Hause und sie nimmt den Bus. An der Haltestelle trifft sie ihre Freundin Frau Schmidt. Frau Schmidt will auch in den Supermarkt.", base:"Mrs. Meier goes to the supermarket today. Her husband is not at home and she takes the bus. At the bus stop she meets her friend Mrs. Schmidt. Mrs. Schmidt also wants to go to the supermarket."},
+    {target:"Frau Müller: “Das ist super! Dann fahren wir zusammen!”. Frau Schmidt: “Ja, wir kaufen ein. Danach trinken wir Kaffee und essen Kuchen. Im Café neben dem Supermarkt gibt es sehr guten Kuchen.” Frau Meier: “Gute Idee!”.", base:"Mrs. Müller: “That is great! Then we will travel together!” Mrs. Schmidt: “Yes, we will shop. After that we will drink coffee and eat cake. In the café next to the supermarket there is very good cake.” Mrs. Meier: “Good idea!”"},
+    {target:"Frau Meier und Frau Schmidt gehen zusammen in den Supermarkt.", base:"Mrs. Meier and Mrs. Schmidt go into the supermarket together."},
+    {target:"Frau Meier: “Ich brauche Tomaten. Mein Mann will Salat essen. Ich nehme zehn Tomaten.” Frau Schmidt: “Tomaten sind gut. Ich kaufe fünf Tomaten. Da ist auch Kopfsalat.”", base:"Mrs. Meier: “I need tomatoes. My husband wants to eat salad. I will take ten tomatoes.” Mrs. Schmidt: “Tomatoes are good. I am buying five tomatoes. There is also lettuce.”"},
+    {target:"Frau Meier nimmt keinen Kopfsalat. Sie nimmt aber zwei Gurken. Frau Meier kauft auch ein Kilo Zwiebeln. Frau Schmidt will Brot kaufen.", base:"Mrs. Meier does not take any lettuce. But she takes two cucumbers. Mrs. Meier also buys one kilo of onions. Mrs. Schmidt wants to buy bread."},
+    {target:"Frau Meier: “Das Brot ist nicht schön. Ich kaufe Brot in der Bäckerei. Aber die Schokolade hier ist gut. Sie kostet nur 50 Cent. Ich nehme drei Tafeln Schokolade.” Frau Schmidt: “Da ist noch ein Sonderangebot. Mineralwasser und Orangensaft sind billig.” Frau Meier: “Orangensaft habe ich zu Hause. Aber ich brauche fünf Flaschen Mineralwasser.”", base:"Mrs. Meier: “The bread is not nice. I buy bread at the bakery. But the chocolate here is good. It costs only 50 cents. I will take three bars of chocolate.” Mrs. Schmidt: “There is another special offer. Mineral water and orange juice are cheap.” Mrs. Meier: “I have orange juice at home. But I need five bottles of mineral water.”"},
+    {target:"Frau Schmidt kauft nur drei Flaschen Mineralwasser. Frau Meier und Frau Schmidt gehen an die Kasse. Dann gehen sie ins Café. Frau Schmidt trinkt eine Tasse Tee. Frau Meier mag lieber Kaffee. Sie bestellen zwei Stücke Schokoladenkuchen. Sie fahren mit dem Bus nach Hause.", base:"Mrs. Schmidt buys only three bottles of mineral water. Mrs. Meier and Mrs. Schmidt go to the checkout. Then they go into the café. Mrs. Schmidt drinks a cup of tea. Mrs. Meier prefers coffee. They order two pieces of chocolate cake. They go home by bus."}
+  ],
+  sentences: [
+    {target:"Frau Meier geht heute in den Supermarkt.", base:"Mrs. Meier goes to the supermarket today.", cefrLevel:"A1"},
+    {target:"Ihr Mann ist nicht zu Hause und sie nimmt den Bus.", base:"Her husband is not at home and she takes the bus.", cefrLevel:"A1"},
+    {target:"An der Haltestelle trifft sie ihre Freundin Frau Schmidt.", base:"At the bus stop she meets her friend Mrs. Schmidt.", cefrLevel:"A2"},
+    {target:"Frau Schmidt will auch in den Supermarkt.", base:"Mrs. Schmidt also wants to go to the supermarket.", cefrLevel:"A1"},
+    {target:"Das ist super!", base:"That is great!", cefrLevel:"A1"},
+    {target:"Dann fahren wir zusammen!", base:"Then we will travel together!", cefrLevel:"A1"},
+    {target:"Ja, wir kaufen ein.", base:"Yes, we are shopping.", cefrLevel:"A1"},
+    {target:"Danach trinken wir Kaffee und essen Kuchen.", base:"After that we drink coffee and eat cake.", cefrLevel:"A1"},
+    {target:"Im Café neben dem Supermarkt gibt es sehr guten Kuchen.", base:"In the café next to the supermarket there is very good cake.", cefrLevel:"A2"},
+    {target:"Gute Idee!", base:"Good idea!", cefrLevel:"A1"},
+    {target:"Frau Meier und Frau Schmidt gehen zusammen in den Supermarkt.", base:"Mrs. Meier and Mrs. Schmidt go into the supermarket together.", cefrLevel:"A1"},
+    {target:"Ich brauche Tomaten.", base:"I need tomatoes.", cefrLevel:"A1"},
+    {target:"Mein Mann will Salat essen.", base:"My husband wants to eat salad.", cefrLevel:"A1"},
+    {target:"Ich nehme zehn Tomaten.", base:"I will take ten tomatoes.", cefrLevel:"A1"},
+    {target:"Tomaten sind gut.", base:"Tomatoes are good.", cefrLevel:"A1"},
+    {target:"Ich kaufe fünf Tomaten.", base:"I am buying five tomatoes.", cefrLevel:"A1"},
+    {target:"Da ist auch Kopfsalat.", base:"There is also lettuce.", cefrLevel:"A1"},
+    {target:"Frau Meier nimmt keinen Kopfsalat.", base:"Mrs. Meier does not take any lettuce.", cefrLevel:"A2"},
+    {target:"Sie nimmt aber zwei Gurken.", base:"But she takes two cucumbers.", cefrLevel:"A1"},
+    {target:"Frau Meier kauft auch ein Kilo Zwiebeln.", base:"Mrs. Meier also buys one kilo of onions.", cefrLevel:"A1"},
+    {target:"Frau Schmidt will Brot kaufen.", base:"Mrs. Schmidt wants to buy bread.", cefrLevel:"A1"},
+    {target:"Das Brot ist nicht schön.", base:"The bread is not nice.", cefrLevel:"A1"},
+    {target:"Ich kaufe Brot in der Bäckerei.", base:"I buy bread at the bakery.", cefrLevel:"A2"},
+    {target:"Aber die Schokolade hier ist gut.", base:"But the chocolate here is good.", cefrLevel:"A1"},
+    {target:"Sie kostet nur 50 Cent.", base:"It costs only 50 cents.", cefrLevel:"A1"},
+    {target:"Ich nehme drei Tafeln Schokolade.", base:"I will take three bars of chocolate.", cefrLevel:"A2"},
+    {target:"Da ist noch ein Sonderangebot.", base:"There is another special offer.", cefrLevel:"A2"},
+    {target:"Mineralwasser und Orangensaft sind billig.", base:"Mineral water and orange juice are cheap.", cefrLevel:"A1"},
+    {target:"Orangensaft habe ich zu Hause.", base:"I have orange juice at home.", cefrLevel:"A2"},
+    {target:"Aber ich brauche fünf Flaschen Mineralwasser.", base:"But I need five bottles of mineral water.", cefrLevel:"A1"},
+    {target:"Frau Schmidt kauft nur drei Flaschen Mineralwasser.", base:"Mrs. Schmidt buys only three bottles of mineral water.", cefrLevel:"A2"},
+    {target:"Frau Meier und Frau Schmidt gehen an die Kasse.", base:"Mrs. Meier and Mrs. Schmidt go to the checkout.", cefrLevel:"A2"},
+    {target:"Dann gehen sie ins Café.", base:"Then they go into the café.", cefrLevel:"A1"},
+    {target:"Frau Schmidt trinkt eine Tasse Tee.", base:"Mrs. Schmidt drinks a cup of tea.", cefrLevel:"A1"},
+    {target:"Frau Meier mag lieber Kaffee.", base:"Mrs. Meier prefers coffee.", cefrLevel:"A1"},
+    {target:"Sie bestellen zwei Stücke Schokoladenkuchen.", base:"They order two pieces of chocolate cake.", cefrLevel:"A2"},
+    {target:"Sie fahren mit dem Bus nach Hause.", base:"They go home by bus.", cefrLevel:"A1"}
+  ],
+  dictionary: {
+    "frau":{translation:"Mrs.; woman",pos:"noun",ipa:"/fʁaʊ/",context:"Formal title for an adult woman; also the noun ‘woman’.",synonyms:["Dame","Person"],antonyms:["Mann"],examples:["Die Frau kauft Tomaten.","Frau Schmidt trinkt Tee."],conjugation:null},
+    "meier":{translation:"Meier (surname)",pos:"noun",ipa:"/ˈmaɪ̯ɐ/",context:"A common German family name used here as a character name.",synonyms:["Familienname","Name"],antonyms:[],examples:["Frau Meier geht einkaufen.","Meier ist ein deutscher Name."],conjugation:null},
+    "schmidt":{translation:"Schmidt (surname)",pos:"noun",ipa:"/ʃmɪt/",context:"A common German family name used here as a character name.",synonyms:["Familienname","Name"],antonyms:[],examples:["Frau Schmidt kauft Brot.","Schmidt ist ein Familienname."],conjugation:null},
+    "müller":{translation:"Müller (surname)",pos:"noun",ipa:"/ˈmʏlɐ/",context:"A common German family name.",synonyms:["Familienname","Name"],antonyms:[],examples:["Frau Müller sagt: Das ist super.","Müller ist ein häufiger Name."],conjugation:null},
+    "gehen":{translation:"to go",pos:"verb",ipa:"/ˈɡeːən/",context:"Used for movement on foot or going to a place.",synonyms:["laufen","fahren"],antonyms:["bleiben","stehen"],examples:["Wir gehen in den Supermarkt.","Sie gehen nach Hause."],conjugation:{present:{ich:"gehe",du:"gehst",er:"geht",wir:"gehen",sie:"gehen"},past:{ich:"ging",du:"gingst",er:"ging",wir:"gingen",sie:"gingen"},future:{ich:"werde gehen",du:"wirst gehen",er:"wird gehen",wir:"werden gehen",sie:"werden gehen"}}},
+    "geht":{translation:"goes",pos:"verb",ipa:"/ɡeːt/",context:"Third-person singular present of gehen.",synonyms:["läuft","fährt"],antonyms:["bleibt","steht"],examples:["Frau Meier geht heute.","Er geht ins Café."],conjugation:null},
+    "gehen2":{translation:"go",pos:"verb",ipa:"/ˈɡeːən/",context:"Plural present form of gehen.",synonyms:["laufen","fahren"],antonyms:["bleiben"],examples:["Sie gehen an die Kasse.","Wir gehen zusammen."],conjugation:null},
+    "heute":{translation:"today",pos:"adverb",ipa:"/ˈhɔʏ̯tə/",context:"Time adverb meaning the current day.",synonyms:["jetzt","an diesem Tag"],antonyms:["gestern","morgen"],examples:["Heute kaufe ich Brot.","Frau Meier geht heute einkaufen."],conjugation:null},
+    "in":{translation:"in; into",pos:"preposition",ipa:"/ɪn/",context:"Used with accusative for movement into a place and dative for location.",synonyms:["hinein","innerhalb"],antonyms:["außerhalb"],examples:["Sie geht in den Supermarkt.","Das Brot ist in der Bäckerei."],conjugation:null},
+    "den":{translation:"the",pos:"article",ipa:"/deːn/",context:"Masculine accusative definite article.",synonyms:["diesen"],antonyms:[],examples:["Sie nimmt den Bus.","Er geht in den Supermarkt."],conjugation:null},
+    "supermarkt":{translation:"supermarket",pos:"noun",ipa:"/ˈzuːpɐˌmaʁkt/",context:"A shop where people buy food and household goods.",synonyms:["Markt","Laden"],antonyms:[],examples:["Der Supermarkt ist groß.","Wir kaufen im Supermarkt ein."],conjugation:null},
+    "ihr":{translation:"her",pos:"pronoun",ipa:"/iːɐ̯/",context:"Possessive pronoun for a female owner.",synonyms:["ihre"],antonyms:["sein"],examples:["Ihr Mann ist zu Hause.","Ihre Freundin kommt mit."],conjugation:null},
+    "mann":{translation:"husband; man",pos:"noun",ipa:"/man/",context:"Can mean man or husband depending on context.",synonyms:["Ehemann","Herr"],antonyms:["Frau"],examples:["Mein Mann will Salat essen.","Der Mann nimmt den Bus."],conjugation:null},
+    "ist":{translation:"is",pos:"verb",ipa:"/ɪst/",context:"Third-person singular present of sein.",synonyms:["befindet sich","existiert"],antonyms:["ist nicht"],examples:["Das Brot ist gut.","Da ist ein Sonderangebot."],conjugation:{present:{ich:"bin",du:"bist",er:"ist",wir:"sind",sie:"sind"},past:{ich:"war",du:"warst",er:"war",wir:"waren",sie:"waren"},future:{ich:"werde sein",du:"wirst sein",er:"wird sein",wir:"werden sein",sie:"werden sein"}}},
+    "nicht":{translation:"not",pos:"adverb",ipa:"/nɪçt/",context:"Negates verbs, adjectives, or whole statements.",synonyms:["kein","niemals"],antonyms:["doch","ja"],examples:["Das Brot ist nicht schön.","Er ist nicht zu Hause."],conjugation:null},
+    "zu":{translation:"at; to",pos:"preposition",ipa:"/tsuː/",context:"Part of fixed phrase zu Hause = at home.",synonyms:["nach","bei"],antonyms:["von"],examples:["Ich bin zu Hause.","Sie fährt zu Frau Schmidt."],conjugation:null},
+    "hause":{translation:"home",pos:"noun",ipa:"/ˈhaʊ̯zə/",context:"Usually appears in the phrase zu Hause or nach Hause.",synonyms:["Wohnung","Heim"],antonyms:["draußen"],examples:["Orangensaft habe ich zu Hause.","Sie fahren nach Hause."],conjugation:null},
+    "und":{translation:"and",pos:"conjunction",ipa:"/ʊnt/",context:"Connects words, phrases, or clauses.",synonyms:["sowie","plus"],antonyms:["oder"],examples:["Kaffee und Kuchen.","Frau Meier und Frau Schmidt."],conjugation:null},
+    "sie":{translation:"she; they",pos:"pronoun",ipa:"/ziː/",context:"Can mean she or they; context shows the meaning.",synonyms:["diese Person","diese Leute"],antonyms:["er","wir"],examples:["Sie nimmt den Bus.","Sie bestellen Kuchen."],conjugation:null},
+    "nimmt":{translation:"takes",pos:"verb",ipa:"/nɪmt/",context:"Third-person singular present of nehmen.",synonyms:["nimmt mit","wählt"],antonyms:["gibt","lässt"],examples:["Sie nimmt zwei Gurken.","Frau Meier nimmt keinen Kopfsalat."],conjugation:{present:{ich:"nehme",du:"nimmst",er:"nimmt",wir:"nehmen",sie:"nehmen"},past:{ich:"nahm",du:"nahmst",er:"nahm",wir:"nahmen",sie:"nahmen"},future:{ich:"werde nehmen",du:"wirst nehmen",er:"wird nehmen",wir:"werden nehmen",sie:"werden nehmen"}}},
+    "bus":{translation:"bus",pos:"noun",ipa:"/bʊs/",context:"Public transport vehicle.",synonyms:["Omnibus","Linienbus"],antonyms:[],examples:["Sie nimmt den Bus.","Wir fahren mit dem Bus."],conjugation:null},
+    "an":{translation:"at; to",pos:"preposition",ipa:"/an/",context:"Used for locations such as an der Haltestelle or an die Kasse.",synonyms:["bei","zu"],antonyms:["von"],examples:["An der Haltestelle wartet sie.","Sie gehen an die Kasse."],conjugation:null},
+    "der":{translation:"the; of the",pos:"article",ipa:"/deːɐ̯/",context:"Definite article; can be feminine dative or masculine nominative.",synonyms:["dieser","die"],antonyms:[],examples:["An der Haltestelle.","In der Bäckerei."],conjugation:null},
+    "haltestelle":{translation:"bus stop; stop",pos:"noun",ipa:"/ˈhaltəˌʃtɛlə/",context:"A place where a bus or tram stops.",synonyms:["Bushaltestelle","Station"],antonyms:[],examples:["An der Haltestelle trifft sie ihre Freundin.","Die Haltestelle ist neben dem Café."],conjugation:null},
+    "trifft":{translation:"meets",pos:"verb",ipa:"/tʁɪft/",context:"Third-person singular present of treffen.",synonyms:["begegnet","sieht"],antonyms:["verpasst","meidet"],examples:["Sie trifft ihre Freundin.","Er trifft Frau Müller."],conjugation:{present:{ich:"treffe",du:"triffst",er:"trifft",wir:"treffen",sie:"treffen"},past:{ich:"traf",du:"trafst",er:"traf",wir:"trafen",sie:"trafen"},future:{ich:"werde treffen",du:"wirst treffen",er:"wird treffen",wir:"werden treffen",sie:"werden treffen"}}},
+    "ihre":{translation:"her",pos:"pronoun",ipa:"/ˈiːʁə/",context:"Feminine possessive pronoun.",synonyms:["ihren","ihr"],antonyms:["seine"],examples:["Sie trifft ihre Freundin.","Ihre Tasche ist voll."],conjugation:null},
+    "freundin":{translation:"female friend",pos:"noun",ipa:"/ˈfʁɔʏ̯ndɪn/",context:"A female friend.",synonyms:["Bekannte","Partnerin"],antonyms:["Feindin"],examples:["Ihre Freundin fährt mit.","Frau Schmidt ist ihre Freundin."],conjugation:null},
+    "will":{translation:"wants",pos:"verb",ipa:"/vɪl/",context:"Modal verb wollen in first or third-person singular.",synonyms:["möchte","plant"],antonyms:["will nicht","verweigert"],examples:["Mein Mann will Salat essen.","Frau Schmidt will Brot kaufen."],conjugation:{present:{ich:"will",du:"willst",er:"will",wir:"wollen",sie:"wollen"},past:{ich:"wollte",du:"wolltest",er:"wollte",wir:"wollten",sie:"wollten"},future:{ich:"werde wollen",du:"wirst wollen",er:"wird wollen",wir:"werden wollen",sie:"werden wollen"}}},
+    "auch":{translation:"also",pos:"adverb",ipa:"/aʊ̯x/",context:"Adds another item, person, or action.",synonyms:["ebenfalls","genauso"],antonyms:["nur","nicht"],examples:["Frau Schmidt will auch einkaufen.","Da ist auch Kopfsalat."],conjugation:null},
+    "das":{translation:"that; the",pos:"pronoun",ipa:"/das/",context:"Neuter article or demonstrative pronoun.",synonyms:["dies","jenes"],antonyms:[],examples:["Das ist super.","Das Brot ist schön."],conjugation:null},
+    "super":{translation:"great",pos:"adjective",ipa:"/ˈzuːpɐ/",context:"Informal adjective meaning very good.",synonyms:["toll","prima"],antonyms:["schlecht","langweilig"],examples:["Das ist super!","Der Kuchen ist super."],conjugation:null},
+    "dann":{translation:"then",pos:"adverb",ipa:"/dan/",context:"Shows sequence in time.",synonyms:["danach","anschließend"],antonyms:["vorher"],examples:["Dann fahren wir zusammen.","Dann gehen sie ins Café."],conjugation:null},
+    "fahren":{translation:"to travel; to ride",pos:"verb",ipa:"/ˈfaːʁən/",context:"Used for travelling by vehicle.",synonyms:["reisen","mitfahren"],antonyms:["gehen","bleiben"],examples:["Wir fahren zusammen.","Sie fahren mit dem Bus."],conjugation:{present:{ich:"fahre",du:"fährst",er:"fährt",wir:"fahren",sie:"fahren"},past:{ich:"fuhr",du:"fuhrst",er:"fuhr",wir:"fuhren",sie:"fuhren"},future:{ich:"werde fahren",du:"wirst fahren",er:"wird fahren",wir:"werden fahren",sie:"werden fahren"}}},
+    "wir":{translation:"we",pos:"pronoun",ipa:"/viːɐ̯/",context:"First-person plural pronoun.",synonyms:["du und ich","alle"],antonyms:["sie","ihr"],examples:["Wir kaufen ein.","Wir trinken Kaffee."],conjugation:null},
+    "zusammen":{translation:"together",pos:"adverb",ipa:"/tsuˈzamən/",context:"Means doing something with another person.",synonyms:["gemeinsam","miteinander"],antonyms:["allein","getrennt"],examples:["Wir fahren zusammen.","Sie gehen zusammen in den Supermarkt."],conjugation:null},
+    "ja":{translation:"yes",pos:"adverb",ipa:"/jaː/",context:"Affirmative response.",synonyms:["doch","genau"],antonyms:["nein"],examples:["Ja, wir kaufen ein.","Ja, das ist gut."],conjugation:null},
+    "kaufen":{translation:"to buy",pos:"verb",ipa:"/ˈkaʊ̯fən/",context:"Used for purchasing things.",synonyms:["erwerben","holen"],antonyms:["verkaufen","geben"],examples:["Wir kaufen ein.","Frau Schmidt will Brot kaufen."],conjugation:{present:{ich:"kaufe",du:"kaufst",er:"kauft",wir:"kaufen",sie:"kaufen"},past:{ich:"kaufte",du:"kauftest",er:"kaufte",wir:"kauften",sie:"kauften"},future:{ich:"werde kaufen",du:"wirst kaufen",er:"wird kaufen",wir:"werden kaufen",sie:"werden kaufen"}}},
+    "kaufe":{translation:"buy",pos:"verb",ipa:"/ˈkaʊ̯fə/",context:"First-person singular present of kaufen.",synonyms:["erwerbe","hole"],antonyms:["verkaufe"],examples:["Ich kaufe fünf Tomaten.","Ich kaufe Brot in der Bäckerei."],conjugation:null},
+    "kauft":{translation:"buys",pos:"verb",ipa:"/kaʊ̯ft/",context:"Third-person singular present of kaufen.",synonyms:["erwirbt","holt"],antonyms:["verkauft"],examples:["Frau Schmidt kauft Mineralwasser.","Frau Meier kauft Zwiebeln."],conjugation:null},
+    "ein":{translation:"a; one; in (separable prefix)",pos:"article",ipa:"/aɪ̯n/",context:"Used as an indefinite article, number one, or in einkaufen.",synonyms:["eins","eine"],antonyms:["kein"],examples:["Ein Kilo Zwiebeln.","Wir kaufen ein."],conjugation:null},
+    "danach":{translation:"after that",pos:"adverb",ipa:"/daˈnaːx/",context:"Time connector for the next action.",synonyms:["anschließend","dann"],antonyms:["vorher"],examples:["Danach trinken wir Kaffee.","Danach gehen sie nach Hause."],conjugation:null},
+    "trinken":{translation:"to drink",pos:"verb",ipa:"/ˈtʁɪŋkən/",context:"To consume a drink.",synonyms:["schlürfen","zu sich nehmen"],antonyms:["essen"],examples:["Wir trinken Kaffee.","Frau Schmidt trinkt Tee."],conjugation:{present:{ich:"trinke",du:"trinkst",er:"trinkt",wir:"trinken",sie:"trinken"},past:{ich:"trank",du:"trankst",er:"trank",wir:"tranken",sie:"tranken"},future:{ich:"werde trinken",du:"wirst trinken",er:"wird trinken",wir:"werden trinken",sie:"werden trinken"}}},
+    "trinkt":{translation:"drinks",pos:"verb",ipa:"/tʁɪŋkt/",context:"Third-person singular present of trinken.",synonyms:["nimmt zu sich","schlürft"],antonyms:["isst"],examples:["Frau Schmidt trinkt Tee.","Er trinkt Kaffee."],conjugation:null},
+    "kaffee":{translation:"coffee",pos:"noun",ipa:"/ˈkafe/",context:"A hot drink.",synonyms:["Heißgetränk","Espresso"],antonyms:[],examples:["Wir trinken Kaffee.","Frau Meier mag Kaffee."],conjugation:null},
+    "essen":{translation:"to eat",pos:"verb",ipa:"/ˈɛsən/",context:"To consume food.",synonyms:["speisen","verzehren"],antonyms:["trinken"],examples:["Mein Mann will Salat essen.","Wir essen Kuchen."],conjugation:{present:{ich:"esse",du:"isst",er:"isst",wir:"essen",sie:"essen"},past:{ich:"aß",du:"aßest",er:"aß",wir:"aßen",sie:"aßen"},future:{ich:"werde essen",du:"wirst essen",er:"wird essen",wir:"werden essen",sie:"werden essen"}}},
+    "kuchen":{translation:"cake",pos:"noun",ipa:"/ˈkuːxən/",context:"Sweet baked food.",synonyms:["Gebäck","Torte"],antonyms:[],examples:["Wir essen Kuchen.","Der Kuchen ist gut."],conjugation:null},
+    "café":{translation:"café",pos:"noun",ipa:"/kaˈfeː/",context:"A place to drink coffee or tea and eat cake.",synonyms:["Kaffeehaus","Bistro"],antonyms:[],examples:["Sie gehen ins Café.","Das Café ist neben dem Supermarkt."],conjugation:null},
+    "neben":{translation:"next to",pos:"preposition",ipa:"/ˈneːbən/",context:"Shows location beside something.",synonyms:["bei","an der Seite von"],antonyms:["fern von"],examples:["Im Café neben dem Supermarkt.","Die Bäckerei ist neben dem Markt."],conjugation:null},
+    "dem":{translation:"the",pos:"article",ipa:"/deːm/",context:"Dative masculine or neuter definite article.",synonyms:["diesem"],antonyms:[],examples:["Neben dem Supermarkt.","Mit dem Bus."],conjugation:null},
+    "gibt":{translation:"there is; gives",pos:"verb",ipa:"/ɡɪpt/",context:"In gibt es, it means there is/are.",synonyms:["existiert","hat"],antonyms:["fehlt"],examples:["Im Café gibt es Kuchen.","Da gibt es ein Angebot."],conjugation:null},
+    "es":{translation:"it; there",pos:"pronoun",ipa:"/ɛs/",context:"Used as subject in expressions like es gibt.",synonyms:["das"],antonyms:[],examples:["Es gibt Kuchen.","Es ist billig."],conjugation:null},
+    "sehr":{translation:"very",pos:"adverb",ipa:"/zeːɐ̯/",context:"Intensifier before adjectives.",synonyms:["wirklich","besonders"],antonyms:["kaum","wenig"],examples:["Sehr guter Kuchen.","Das ist sehr gut."],conjugation:null},
+    "guten":{translation:"good",pos:"adjective",ipa:"/ˈɡuːtən/",context:"Inflected form of gut after masculine accusative adjective ending.",synonyms:["leckeren","schönen"],antonyms:["schlechten"],examples:["Es gibt sehr guten Kuchen.","Sie kauft guten Tee."],conjugation:null},
+    "gute":{translation:"good",pos:"adjective",ipa:"/ˈɡuːtə/",context:"Feminine adjective form.",synonyms:["prima","schöne"],antonyms:["schlechte"],examples:["Gute Idee!","Das ist eine gute Sache."],conjugation:null},
+    "idee":{translation:"idea",pos:"noun",ipa:"/iˈdeː/",context:"A thought or plan.",synonyms:["Vorschlag","Gedanke"],antonyms:[],examples:["Gute Idee!","Die Idee ist super."],conjugation:null},
+    "ich":{translation:"I",pos:"pronoun",ipa:"/ɪç/",context:"First-person singular pronoun.",synonyms:["meine Person"],antonyms:["du","er"],examples:["Ich brauche Tomaten.","Ich kaufe Brot."],conjugation:null},
+    "brauche":{translation:"need",pos:"verb",ipa:"/ˈbʁaʊ̯xə/",context:"First-person singular of brauchen.",synonyms:["benötige","muss haben"],antonyms:["habe","entbehre"],examples:["Ich brauche Tomaten.","Ich brauche fünf Flaschen."],conjugation:{present:{ich:"brauche",du:"brauchst",er:"braucht",wir:"brauchen",sie:"brauchen"},past:{ich:"brauchte",du:"brauchtest",er:"brauchte",wir:"brauchten",sie:"brauchten"},future:{ich:"werde brauchen",du:"wirst brauchen",er:"wird brauchen",wir:"werden brauchen",sie:"werden brauchen"}}},
+    "tomaten":{translation:"tomatoes",pos:"noun",ipa:"/toˈmaːtən/",context:"Plural of Tomate.",synonyms:["Gemüse","Salattomaten"],antonyms:[],examples:["Ich brauche Tomaten.","Sie kauft fünf Tomaten."],conjugation:null},
+    "mein":{translation:"my",pos:"pronoun",ipa:"/maɪ̯n/",context:"Possessive pronoun, masculine nominative here.",synonyms:["meine","mir gehörend"],antonyms:["dein","sein"],examples:["Mein Mann will Salat essen.","Mein Brot ist hier."],conjugation:null},
+    "salat":{translation:"salad",pos:"noun",ipa:"/zaˈlaːt/",context:"A dish often made with vegetables.",synonyms:["Gemüsesalat","Beilage"],antonyms:[],examples:["Mein Mann will Salat essen.","Der Salat ist gut."],conjugation:null},
+    "nehme":{translation:"take",pos:"verb",ipa:"/ˈneːmə/",context:"First-person singular of nehmen.",synonyms:["wähle","hole"],antonyms:["lasse","gebe"],examples:["Ich nehme zehn Tomaten.","Ich nehme drei Tafeln."],conjugation:null},
+    "zehn":{translation:"ten",pos:"number",ipa:"/tseːn/",context:"Cardinal number 10.",synonyms:["10"],antonyms:[],examples:["Ich nehme zehn Tomaten.","Zehn Flaschen sind viel."],conjugation:null},
+    "sind":{translation:"are",pos:"verb",ipa:"/zɪnt/",context:"Plural present of sein.",synonyms:["befinden sich","existieren"],antonyms:["sind nicht"],examples:["Tomaten sind gut.","Mineralwasser und Orangensaft sind billig."],conjugation:null},
+    "gut":{translation:"good",pos:"adjective",ipa:"/ɡuːt/",context:"Basic positive adjective.",synonyms:["prima","lecker"],antonyms:["schlecht","böse"],examples:["Tomaten sind gut.","Die Schokolade ist gut."],conjugation:null},
+    "fünf":{translation:"five",pos:"number",ipa:"/fʏnf/",context:"Cardinal number 5.",synonyms:["5"],antonyms:[],examples:["Ich kaufe fünf Tomaten.","Sie braucht fünf Flaschen."],conjugation:null},
+    "da":{translation:"there",pos:"adverb",ipa:"/daː/",context:"Points to a place or situation.",synonyms:["dort","hier"],antonyms:["weg"],examples:["Da ist auch Kopfsalat.","Da ist ein Sonderangebot."],conjugation:null},
+    "kopfsalat":{translation:"lettuce",pos:"noun",ipa:"/ˈkɔpfzaˌlaːt/",context:"Head lettuce, a type of salad vegetable.",synonyms:["Salatkopf","Blattsalat"],antonyms:[],examples:["Da ist auch Kopfsalat.","Frau Meier nimmt keinen Kopfsalat."],conjugation:null},
+    "keinen":{translation:"no; not any",pos:"article",ipa:"/ˈkaɪ̯nən/",context:"Masculine accusative negation article.",synonyms:["nicht einen","gar keinen"],antonyms:["einen"],examples:["Sie nimmt keinen Kopfsalat.","Ich kaufe keinen Kuchen."],conjugation:null},
+    "aber":{translation:"but",pos:"conjunction",ipa:"/ˈaːbɐ/",context:"Shows contrast.",synonyms:["doch","jedoch"],antonyms:["und"],examples:["Sie nimmt aber zwei Gurken.","Aber die Schokolade ist gut."],conjugation:null},
+    "zwei":{translation:"two",pos:"number",ipa:"/tsvaɪ̯/",context:"Cardinal number 2.",synonyms:["2","beide"],antonyms:[],examples:["Sie nimmt zwei Gurken.","Sie bestellen zwei Stücke."],conjugation:null},
+    "gurken":{translation:"cucumbers",pos:"noun",ipa:"/ˈɡʊʁkən/",context:"Plural of Gurke.",synonyms:["Gemüse","Salatgurken"],antonyms:[],examples:["Sie nimmt zwei Gurken.","Gurken sind grün."],conjugation:null},
+    "kilo":{translation:"kilo",pos:"noun",ipa:"/ˈkiːlo/",context:"Short for kilogram.",synonyms:["Kilogramm","kg"],antonyms:[],examples:["Ein Kilo Zwiebeln.","Ich kaufe ein Kilo Tomaten."],conjugation:null},
+    "zwiebeln":{translation:"onions",pos:"noun",ipa:"/ˈtsviːbl̩n/",context:"Plural of Zwiebel.",synonyms:["Gemüse","Speisezwiebeln"],antonyms:[],examples:["Frau Meier kauft Zwiebeln.","Zwiebeln sind billig."],conjugation:null},
+    "brot":{translation:"bread",pos:"noun",ipa:"/bʁoːt/",context:"Common baked food.",synonyms:["Backware","Laib"],antonyms:[],examples:["Frau Schmidt will Brot kaufen.","Das Brot ist nicht schön."],conjugation:null},
+    "schön":{translation:"nice; beautiful",pos:"adjective",ipa:"/ʃøːn/",context:"Can describe appearance or quality.",synonyms:["hübsch","gut"],antonyms:["hässlich","schlecht"],examples:["Das Brot ist nicht schön.","Die Idee ist schön."],conjugation:null},
+    "bäckerei":{translation:"bakery",pos:"noun",ipa:"/bɛkəˈʁaɪ̯/",context:"A shop that sells bread and baked goods.",synonyms:["Backstube","Brotladen"],antonyms:[],examples:["Ich kaufe Brot in der Bäckerei.","Die Bäckerei ist neben dem Café."],conjugation:null},
+    "die":{translation:"the",pos:"article",ipa:"/diː/",context:"Feminine or plural definite article.",synonyms:["diese"],antonyms:[],examples:["Die Schokolade ist gut.","Sie gehen an die Kasse."],conjugation:null},
+    "schokolade":{translation:"chocolate",pos:"noun",ipa:"/ʃokoˈlaːdə/",context:"Sweet food made from cocoa.",synonyms:["Süßigkeit","Tafel"],antonyms:[],examples:["Die Schokolade hier ist gut.","Ich nehme drei Tafeln Schokolade."],conjugation:null},
+    "hier":{translation:"here",pos:"adverb",ipa:"/hiːɐ̯/",context:"Refers to the current place.",synonyms:["da","an diesem Ort"],antonyms:["dort"],examples:["Die Schokolade hier ist gut.","Hier gibt es Kuchen."],conjugation:null},
+    "kostet":{translation:"costs",pos:"verb",ipa:"/ˈkɔstət/",context:"Third-person singular of kosten.",synonyms:["beträgt","ist wert"],antonyms:[],examples:["Sie kostet nur 50 Cent.","Das Brot kostet zwei Euro."],conjugation:{present:{ich:"koste",du:"kostest",er:"kostet",wir:"kosten",sie:"kosten"},past:{ich:"kostete",du:"kostetest",er:"kostete",wir:"kosteten",sie:"kosteten"},future:{ich:"werde kosten",du:"wirst kosten",er:"wird kosten",wir:"werden kosten",sie:"werden kosten"}}},
+    "nur":{translation:"only",pos:"adverb",ipa:"/nuːɐ̯/",context:"Limits quantity or amount.",synonyms:["bloß","allein"],antonyms:["auch","viel"],examples:["Sie kostet nur 50 Cent.","Frau Schmidt kauft nur drei Flaschen."],conjugation:null},
+    "cent":{translation:"cent",pos:"noun",ipa:"/tsɛnt/",context:"A small unit of currency.",synonyms:["Geld","Münze"],antonyms:[],examples:["Sie kostet nur 50 Cent.","Fünfzig Cent sind billig."],conjugation:null},
+    "drei":{translation:"three",pos:"number",ipa:"/dʁaɪ̯/",context:"Cardinal number 3.",synonyms:["3"],antonyms:[],examples:["Ich nehme drei Tafeln.","Sie kauft drei Flaschen."],conjugation:null},
+    "tafeln":{translation:"bars; tablets",pos:"noun",ipa:"/ˈtaːfl̩n/",context:"Plural of Tafel; used for chocolate bars.",synonyms:["Stücke","Platten"],antonyms:[],examples:["Drei Tafeln Schokolade.","Die Tafeln sind klein."],conjugation:null},
+    "noch":{translation:"still; another",pos:"adverb",ipa:"/nɔx/",context:"Here means another/additional.",synonyms:["weiter","zusätzlich"],antonyms:["nicht mehr"],examples:["Da ist noch ein Sonderangebot.","Ich brauche noch Wasser."],conjugation:null},
+    "sonderangebot":{translation:"special offer",pos:"noun",ipa:"/ˈzɔndɐʔanɡəˌboːt/",context:"A reduced-price offer in a shop.",synonyms:["Angebot","Rabatt"],antonyms:["Normalpreis"],examples:["Da ist noch ein Sonderangebot.","Das Sonderangebot ist billig."],conjugation:null},
+    "mineralwasser":{translation:"mineral water",pos:"noun",ipa:"/mineˈʁaːlˌvasɐ/",context:"Bottled water with minerals.",synonyms:["Wasser","Sprudel"],antonyms:[],examples:["Mineralwasser ist billig.","Ich brauche fünf Flaschen Mineralwasser."],conjugation:null},
+    "orangensaft":{translation:"orange juice",pos:"noun",ipa:"/oˈʁaŋənˌzaft/",context:"Juice made from oranges.",synonyms:["Saft","Fruchtsaft"],antonyms:[],examples:["Orangensaft habe ich zu Hause.","Orangensaft ist billig."],conjugation:null},
+    "billig":{translation:"cheap",pos:"adjective",ipa:"/ˈbɪlɪç/",context:"Low in price.",synonyms:["günstig","preiswert"],antonyms:["teuer","kostspielig"],examples:["Mineralwasser und Orangensaft sind billig.","Die Tomaten sind billig."],conjugation:null},
+    "habe":{translation:"have",pos:"verb",ipa:"/ˈhaːbə/",context:"First-person singular present of haben.",synonyms:["besitze","verfüge über"],antonyms:["brauche","fehlt mir"],examples:["Orangensaft habe ich zu Hause.","Ich habe Tomaten."],conjugation:{present:{ich:"habe",du:"hast",er:"hat",wir:"haben",sie:"haben"},past:{ich:"hatte",du:"hattest",er:"hatte",wir:"hatten",sie:"hatten"},future:{ich:"werde haben",du:"wirst haben",er:"wird haben",wir:"werden haben",sie:"werden haben"}}},
+    "flaschen":{translation:"bottles",pos:"noun",ipa:"/ˈflaʃən/",context:"Plural of Flasche.",synonyms:["Behälter","Wasserflaschen"],antonyms:[],examples:["Fünf Flaschen Mineralwasser.","Drei Flaschen sind genug."],conjugation:null},
+    "kasse":{translation:"checkout; cash register",pos:"noun",ipa:"/ˈkasə/",context:"Place where customers pay.",synonyms:["Kassentisch","Zahlstelle"],antonyms:[],examples:["Sie gehen an die Kasse.","Die Kasse ist vorne."],conjugation:null},
+    "ins":{translation:"into the",pos:"preposition",ipa:"/ɪns/",context:"Contraction of in + das.",synonyms:["in das","hinein"],antonyms:["aus dem"],examples:["Dann gehen sie ins Café.","Er geht ins Haus."],conjugation:null},
+    "eine":{translation:"a; one",pos:"article",ipa:"/ˈaɪ̯nə/",context:"Feminine indefinite article or number one.",synonyms:["eins","irgendeine"],antonyms:["keine"],examples:["Eine Tasse Tee.","Eine gute Idee."],conjugation:null},
+    "tasse":{translation:"cup",pos:"noun",ipa:"/ˈtasə/",context:"Container for tea or coffee.",synonyms:["Becher","Kaffeetasse"],antonyms:[],examples:["Frau Schmidt trinkt eine Tasse Tee.","Die Tasse ist voll."],conjugation:null},
+    "tee":{translation:"tea",pos:"noun",ipa:"/teː/",context:"A hot drink made with leaves or herbs.",synonyms:["Getränk","Kräutertee"],antonyms:[],examples:["Frau Schmidt trinkt Tee.","Der Tee ist heiß."],conjugation:null},
+    "mag":{translation:"likes",pos:"verb",ipa:"/maːk/",context:"First or third-person singular present of mögen.",synonyms:["liebt","bevorzugt"],antonyms:["mag nicht","hasst"],examples:["Frau Meier mag lieber Kaffee.","Ich mag Kuchen."],conjugation:{present:{ich:"mag",du:"magst",er:"mag",wir:"mögen",sie:"mögen"},past:{ich:"mochte",du:"mochtest",er:"mochte",wir:"mochten",sie:"mochten"},future:{ich:"werde mögen",du:"wirst mögen",er:"wird mögen",wir:"werden mögen",sie:"werden mögen"}}},
+    "lieber":{translation:"preferably; rather",pos:"adverb",ipa:"/ˈliːbɐ/",context:"Used to express preference.",synonyms:["eher","bevorzugt"],antonyms:["ungern"],examples:["Frau Meier mag lieber Kaffee.","Ich trinke lieber Tee."],conjugation:null},
+    "bestellen":{translation:"order",pos:"verb",ipa:"/bəˈʃtɛlən/",context:"To order food or drink in a café.",synonyms:["ordern","anfordern"],antonyms:["stornieren"],examples:["Sie bestellen zwei Stücke Kuchen.","Wir bestellen Kaffee."],conjugation:{present:{ich:"bestelle",du:"bestellst",er:"bestellt",wir:"bestellen",sie:"bestellen"},past:{ich:"bestellte",du:"bestelltest",er:"bestellte",wir:"bestellten",sie:"bestellten"},future:{ich:"werde bestellen",du:"wirst bestellen",er:"wird bestellen",wir:"werden bestellen",sie:"werden bestellen"}}},
+    "stücke":{translation:"pieces",pos:"noun",ipa:"/ˈʃtʏkə/",context:"Plural of Stück, a piece or slice.",synonyms:["Teile","Portionen"],antonyms:[],examples:["Zwei Stücke Schokoladenkuchen.","Die Stücke sind groß."],conjugation:null},
+    "schokoladenkuchen":{translation:"chocolate cake",pos:"noun",ipa:"/ʃokoˈlaːdn̩ˌkuːxən/",context:"Cake made with chocolate.",synonyms:["Kuchen","Torte"],antonyms:[],examples:["Sie bestellen Schokoladenkuchen.","Schokoladenkuchen ist süß."],conjugation:null},
+    "mit":{translation:"with; by",pos:"preposition",ipa:"/mɪt/",context:"Indicates accompaniment or means of transport.",synonyms:["zusammen mit","per"],antonyms:["ohne"],examples:["Mit dem Bus.","Sie fährt mit Frau Schmidt."],conjugation:null},
+    "nach":{translation:"to; after",pos:"preposition",ipa:"/naːx/",context:"Used for direction in nach Hause.",synonyms:["zu","in Richtung"],antonyms:["von"],examples:["Sie fahren nach Hause.","Nach dem Einkauf trinken sie Kaffee."],conjugation:null}
+  },
+  grammar:[
+    {title:"Verb in second position", explanation:"In simple German main clauses, the conjugated verb usually comes in the second position.", examples:["Frau Meier **geht** heute in den Supermarkt.","Danach **trinken** wir Kaffee und essen Kuchen."]},
+    {title:"Accusative after movement into a place", explanation:"With movement into a place, German often uses in + accusative: in den Supermarkt.", examples:["Frau Meier geht heute **in den Supermarkt**.","Frau Schmidt will auch **in den Supermarkt**."]},
+    {title:"Negation with nicht and kein", explanation:"Nicht negates a verb/adjective/whole statement; kein negates a noun with an indefinite or zero article.", examples:["Ihr Mann ist **nicht** zu Hause.","Frau Meier nimmt **keinen** Kopfsalat."]},
+    {title:"Separable verb einkaufen", explanation:"Einkaufen means to shop. In present tense, the prefix can separate: wir kaufen ein.", examples:["Ja, wir **kaufen ein**.","Frau Meier und Frau Schmidt gehen zusammen in den Supermarkt."]},
+    {title:"Numbers before plural nouns", explanation:"Numbers such as zwei, drei, fünf, and zehn come before plural nouns.", examples:["Ich nehme **zehn Tomaten**.","Aber ich brauche **fünf Flaschen** Mineralwasser."]}
+  ],
+  quiz:{
+    mcq:[
+      {question:"How does Frau Meier go to the supermarket?",options:["A. By bus","B. By train","C. By bicycle","D. On foot only"],answer:"A",model:"She takes the bus: Sie nimmt den Bus."},
+      {question:"Who does Frau Meier meet at the bus stop?",options:["A. Her husband","B. Frau Schmidt","C. Frau Müller","D. The baker"],answer:"B",model:"She meets her friend Frau Schmidt."},
+      {question:"What does Frau Meier buy instead of lettuce?",options:["A. Two cucumbers","B. Five breads","C. One cake","D. Tea"],answer:"A",model:"She does not take lettuce; she takes two cucumbers."},
+      {question:"Where do the two women go after the checkout?",options:["A. To the bakery","B. To the café","C. To school","D. To the bus stop immediately"],answer:"B",model:"They go into the café."}
+    ],
+    openEnded:[
+      {question:"List three things Frau Meier buys or takes in the story.",modelAnswer:"Possible answer: tomatoes, cucumbers, onions, chocolate, mineral water."},
+      {question:"What do Frau Meier and Frau Schmidt order in the café?",modelAnswer:"They order two pieces of chocolate cake; Frau Schmidt drinks tea and Frau Meier prefers coffee."}
+    ],
+    fillInTheBlank:[
+      {template:"Frau Meier geht heute in den ___.",blanks:["Supermarkt"],hint:"place"},
+      {template:"Ich nehme zehn ___.",blanks:["Tomaten"],hint:"plural noun"},
+      {template:"Frau Schmidt trinkt eine Tasse ___.",blanks:["Tee"],hint:"drink"},
+      {template:"Sie fahren mit dem ___ nach Hause.",blanks:["Bus"],hint:"transport"}
+    ]
+  },
+  constructionSentences:[
+    {words:["Frau","Meier","geht","heute","in","den","Supermarkt"],translation:"Mrs. Meier goes to the supermarket today."},
+    {words:["Dann","fahren","wir","zusammen"],translation:"Then we will travel together."},
+    {words:["Ich","nehme","zehn","Tomaten"],translation:"I will take ten tomatoes."},
+    {words:["Sie","fahren","mit","dem","Bus","nach","Hause"],translation:"They go home by bus."}
+  ]
+};
+
+const TABS = ["Paragraphs","Sentences","Word-by-Word","Grammar","Flashcards","Quiz"];
+const POS_COLORS = {verb:"bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100", noun:"bg-rose-100 text-rose-800 dark:bg-rose-900 dark:text-rose-100", adjective:"bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100", adverb:"bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-100", pronoun:"bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-100", conjunction:"bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100", preposition:"bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-100", article:"bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-100", number:"bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-100"};
+const $ = s => document.querySelector(s);
+const state = {
+  activeTab: localStorage.getItem('langApp_activeTab') || 'Paragraphs',
+  fontSize: Number(localStorage.getItem('langApp_fontSize') || 16),
+  darkMode: localStorage.getItem('langApp_darkMode') === 'true',
+  xp: Number(localStorage.getItem('langApp_xp') || 0),
+  streak: Number(localStorage.getItem('langApp_streak') || 0),
+  listened: JSON.parse(localStorage.getItem('langApp_listened') || '{}'),
+  quiz: JSON.parse(localStorage.getItem('langApp_quiz') || '{}'),
+  flash: JSON.parse(localStorage.getItem('langApp_flash') || '{}'),
+  badges: JSON.parse(localStorage.getItem('langApp_badges') || '[]'),
+  selectedWord: 'supermarkt',
+  hideTranslations: false,
+  voiceURI: localStorage.getItem('langApp_voiceURI') || '',
+  rate: Number(localStorage.getItem('langApp_rate') || 0.9),
+  pitch: Number(localStorage.getItem('langApp_pitch') || 1),
+  voices: [],
+  flashIndex: 0,
+  flashFlipped: false,
+  fillMode: 'typed',
+  fillAnswers: {},
+  dragAnswers: {},
+  constructionIndex: 0,
+  constructionZone: [],
+  constructionFeedback: [],
+  mediaRecorders: {}
+};
+function save(){
+  localStorage.setItem('langApp_activeTab', state.activeTab); localStorage.setItem('langApp_fontSize', state.fontSize); localStorage.setItem('langApp_darkMode', state.darkMode);
+  localStorage.setItem('langApp_xp', state.xp); localStorage.setItem('langApp_streak', state.streak); localStorage.setItem('langApp_listened', JSON.stringify(state.listened));
+  localStorage.setItem('langApp_quiz', JSON.stringify(state.quiz)); localStorage.setItem('langApp_flash', JSON.stringify(state.flash)); localStorage.setItem('langApp_badges', JSON.stringify(state.badges));
+  localStorage.setItem('langApp_rate', state.rate); localStorage.setItem('langApp_pitch', state.pitch); localStorage.setItem('langApp_voiceURI', state.voiceURI);
+}
+function initDaily(){
+  const today = new Date().toISOString().slice(0,10), last = localStorage.getItem('langApp_lastVisit');
+  if(last !== today){
+    const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    state.streak = last === yesterday ? state.streak + 1 : 1; state.xp += 10; localStorage.setItem('langApp_lastVisit', today); save();
+  }
+}
+function awardXP(n){ state.xp += n; save(); renderHeader(); checkBadges(); }
+function checkBadges(){
+  const knownCount = Object.values(state.flash).filter(v=>v==='known').length;
+  const earned = [
+    ['First Quiz', Object.keys(state.quiz).length>0], ['50 XP', state.xp>=50], ['10 Known Words', knownCount>=10], ['7-Day Streak', state.streak>=7]
+  ];
+  earned.forEach(([b,ok])=>{ if(ok && !state.badges.includes(b)){ state.badges.push(b); toast(`Badge earned: ${b}`); save(); }});
+}
+function toast(msg){ const d=document.createElement('div'); d.className='px-4 py-3 rounded-2xl shadow-lg bg-indigo-600 text-white'; d.textContent=msg; $('#toast').appendChild(d); setTimeout(()=>d.remove(),3000); }
+function setTheme(){ document.documentElement.classList.toggle('dark', state.darkMode); document.documentElement.style.setProperty('--base-font-size', state.fontSize+'px'); }
+function renderHeader(){
+  $('#headerControls').innerHTML = `
+    <button class="focus-ring px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800" data-action="fontDown" aria-label="Decrease font size">A−</button>
+    <button class="focus-ring px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800" data-action="fontUp" aria-label="Increase font size">A+</button>
+    <button class="focus-ring px-3 py-2 rounded-xl bg-slate-100 dark:bg-slate-800" data-action="toggleDark" aria-pressed="${state.darkMode}"><i data-lucide="moon" class="w-4 h-4 inline"></i> Dark</button>
+    <button class="focus-ring px-3 py-2 rounded-xl bg-indigo-600 text-white" data-action="playText" data-text="${escapeAttr(textData.fullText)}"><i data-lucide="volume-2" class="w-4 h-4 inline"></i> Play Full Text</button>
+    <div class="px-3 py-2 rounded-xl bg-amber-100 text-amber-900 dark:bg-amber-900 dark:text-amber-100 text-sm">🔥 ${state.streak} days · ${state.xp} XP<div class="w-28 h-1.5 bg-white/60 rounded-full mt-1"><div class="h-1.5 bg-amber-500 rounded-full" style="width:${state.xp%50*2}%"></div></div></div>`;
+  lucide.createIcons();
+}
+function renderTabs(){ $('#tabs').innerHTML = TABS.map(t=>`<button role="tab" aria-selected="${state.activeTab===t}" data-action="tab" data-tab="${t}" class="focus-ring whitespace-nowrap px-4 py-2 rounded-xl ${state.activeTab===t?'bg-indigo-600 text-white':'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700'}">${t}</button>`).join(''); }
+function render(){ setTheme(); renderHeader(); renderTabs(); const main=$('#main-content'); main.innerHTML = renderVoicePanel() + ({Paragraphs:renderParagraphs, Sentences:renderSentences, "Word-by-Word":renderWords, Grammar:renderGrammar, Flashcards:renderFlashcards, Quiz:renderQuiz}[state.activeTab])() + renderPrintOnly(); lucide.createIcons(); }
+function renderVoicePanel(){
+  const opts = state.voices.map(v=>`<option value="${escapeAttr(v.voiceURI)}" ${state.voiceURI===v.voiceURI?'selected':''}>${v.name} (${v.lang})</option>`).join('');
+  return `<section class="screen-only mb-5 p-4 rounded-2xl border border-slate-200 bg-white dark:bg-slate-800 dark:border-slate-700 controls"><div class="flex flex-wrap items-end gap-3"><label class="text-sm">Voice<select class="block mt-1 rounded-lg bg-slate-50 dark:bg-slate-900 border p-2" data-action="voice">${opts}</select></label><label class="text-sm">Speed <input class="block mt-1" type="range" min="0.6" max="1.3" step="0.1" value="${state.rate}" data-action="rate"></label><label class="text-sm">Pitch <input class="block mt-1" type="range" min="0.7" max="1.4" step="0.1" value="${state.pitch}" data-action="pitch"></label></div></section>`;
+}
+function renderParagraphs(){ return `<section class="space-y-4">${textData.paragraphs.map((p,i)=>`<article class="print-card p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm"><div class="flex gap-2 mb-3"><button class="focus-ring px-3 py-1.5 rounded-lg bg-indigo-600 text-white" data-action="playKaraoke" data-karaoke="p-${i}" data-text="${escapeAttr(p.target)}">Play</button><button class="focus-ring px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900" data-action="playKaraoke" data-karaoke="p-${i}" data-text="${escapeAttr(p.target)}">Karaoke Mode</button></div><p id="p-${i}" class="text-lg leading-8 font-medium">${wrapWords(p.target)}</p><p class="mt-3 text-slate-600 dark:text-slate-300">${p.base}</p></article>`).join('')}</section>`; }
+function renderSentences(){ return `<section class="space-y-3">${textData.sentences.map((s,i)=>`<article class="p-4 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"><div class="flex flex-wrap items-center gap-2 mb-2"><span class="px-2 py-1 rounded-lg text-xs font-bold ${s.cefrLevel.startsWith('A')?'bg-green-100 text-green-800':s.cefrLevel.startsWith('B')?'bg-amber-100 text-amber-800':'bg-red-100 text-red-800'}">${s.cefrLevel}</span>${state.listened[i]?'<span class="text-green-600">✓ listened</span>':''}<button class="focus-ring px-3 py-1.5 rounded-lg bg-indigo-600 text-white" data-action="playSentence" data-index="${i}" data-karaoke="s-${i}" data-text="${escapeAttr(s.target)}">TTS Reference ▶</button><button class="focus-ring px-3 py-1.5 rounded-lg bg-rose-100 dark:bg-rose-900" data-action="record" data-index="${i}"><i data-lucide="mic" class="w-4 h-4 inline"></i> Record</button><button class="focus-ring px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-700" data-action="stopRecord" data-index="${i}">Stop</button></div><p id="s-${i}" class="font-semibold text-lg leading-8">${wrapWords(s.target)}</p><p class="translation mt-1 text-slate-600 dark:text-slate-300 ${state.hideTranslations?'blurred':''}" data-action="reveal">${s.base}</p><div id="recording-${i}" class="mt-2"></div></article>`).join('')}</section>`; }
+function renderWords(){
+  const tokens = textData.fullText.match(/[A-Za-zÄÖÜäöüßéÉ]+|[^A-Za-zÄÖÜäöüßéÉ]+/g) || [];
+  const wordHtml = tokens.map(tok=>{ const k=clean(tok); const entry=textData.dictionary[k]; if(!k) return tok.replace(/\n/g,'<br>'); const cls=POS_COLORS[entry?.pos]||'bg-slate-100 dark:bg-slate-800'; return `<button class="focus-ring m-1 px-2.5 py-1.5 rounded-xl ${cls}" data-action="selectWord" data-word="${k}">${tok}</button>`; }).join('');
+  const e = textData.dictionary[state.selectedWord];
+  return `<section class="grid lg:grid-cols-[1fr_360px] gap-5"><div><div class="mb-4 flex flex-wrap gap-2"><button class="focus-ring px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="toggleHide">${state.hideTranslations?'Show Translations':'Hide Translations'}</button></div><article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 leading-10">${wordHtml}</article></div><aside class="sticky top-36 self-start p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm" id="wordPanel">${renderWordPanel(e,state.selectedWord)}</aside></section>`;
+}
+function renderWordPanel(e, word){ if(!e) return `<h2 class="text-2xl font-bold">${word}</h2><p>Definition not found. Try a dictionary.</p>`; return `<div class="space-y-3"><h2 class="text-3xl font-bold">${word}</h2><p class="text-slate-500">${e.ipa}</p><span class="inline-block px-2 py-1 rounded-lg text-sm ${POS_COLORS[e.pos]||''}">${e.pos}</span><p class="text-lg ${state.hideTranslations?'blurred':''}" data-action="reveal"><b>Translation:</b> ${e.translation}</p><p><b>Context:</b> ${e.context}</p><div><b>Synonyms:</b> ${e.synonyms.map(x=>`<span class="inline-block m-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${x}</span>`).join('')}</div>${e.antonyms.length?`<div><b>Antonyms:</b> ${e.antonyms.map(x=>`<span class="inline-block m-1 px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${x}</span>`).join('')}</div>`:''}<div><b>Examples:</b>${e.examples.map(ex=>`<blockquote class="mt-2 border-l-4 pl-3 text-slate-600 dark:text-slate-300">${ex}</blockquote>`).join('')}</div><button class="focus-ring px-3 py-2 rounded-xl bg-indigo-600 text-white" data-action="playText" data-text="${word}">Play word</button>${e.conjugation?renderConj(e.conjugation):''}</div>`; }
+function renderConj(c){ const persons=['ich','du','er','wir','sie']; return `<table class="mt-3 w-full text-sm border-collapse"><caption class="font-semibold mb-1">Conjugation</caption><thead><tr><th></th>${persons.map(p=>`<th class="border p-1">${p}</th>`).join('')}</tr></thead><tbody>${Object.keys(c).map(t=>`<tr><th class="border p-1">${t}</th>${persons.map(p=>`<td tabindex="0" class="border p-1">${c[t][p]}</td>`).join('')}</tr>`).join('')}</tbody></table>`; }
+function renderGrammar(){ return `<section class="space-y-4">${textData.grammar.map((g,i)=>`<article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700"><h2 class="text-xl font-bold mb-2">${g.title}</h2><p class="mb-3">${g.explanation}</p>${g.examples.map(ex=>`<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 mb-2"><p>${ex.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')}</p><button class="mt-2 focus-ring px-3 py-1.5 rounded-lg bg-indigo-600 text-white" data-action="playText" data-text="${escapeAttr(ex.replace(/\*\*/g,''))}">Play</button></div>`).join('')}</article>`).join('')}</section>`; }
+function renderFlashcards(){ const words=Object.keys(textData.dictionary).filter(w=>!w.endsWith('2')); const w=words[state.flashIndex%words.length], e=textData.dictionary[w]; const reviewed=Object.keys(state.flash).length; return `<section class="max-w-xl mx-auto"><div class="mb-3"><div class="h-2 rounded-full bg-slate-200 dark:bg-slate-700"><div class="h-2 rounded-full bg-indigo-600" style="width:${Math.min(100,reviewed/words.length*100)}%"></div></div><p class="text-sm mt-1">${reviewed} of ${words.length} cards reviewed this session</p></div><div tabindex="0" data-action="flip" class="${state.flashFlipped?'flipped':''} h-72 cursor-pointer"><div class="card-inner relative w-full h-full"><div class="card-face absolute inset-0 p-8 rounded-3xl bg-white dark:bg-slate-800 border shadow-lg flex flex-col justify-center items-center"><h2 class="text-4xl font-bold">${w}</h2><p class="mt-2 text-slate-500">${e.ipa}</p><button class="mt-4 px-3 py-2 rounded-xl bg-indigo-600 text-white" data-action="playText" data-text="${w}">Play</button><p class="text-xs mt-4">Click or press Enter/Space to flip</p></div><div class="card-face card-back absolute inset-0 p-8 rounded-3xl bg-indigo-50 dark:bg-slate-800 border shadow-lg flex flex-col justify-center items-center"><h2 class="text-2xl font-bold">${e.translation}</h2><span class="mt-2 px-2 py-1 rounded-lg ${POS_COLORS[e.pos]||''}">${e.pos}</span><p class="mt-3 text-center">${e.examples[0]}</p><button class="mt-4 px-3 py-2 rounded-xl bg-indigo-600 text-white" data-action="playText" data-text="${w}">Play</button></div></div></div><div class="flashcard-controls mt-5 flex flex-wrap justify-center gap-2"><button class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="prevCard">Previous</button><button class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="nextCard">Next</button><button class="px-4 py-2 rounded-xl bg-green-600 text-white" data-action="known" data-word="${w}">Known +2 XP</button><button class="px-4 py-2 rounded-xl bg-orange-500 text-white" data-action="review" data-word="${w}">Needs Review</button></div></section>`; }
+function renderQuiz(){ return `<section class="space-y-6 quiz-ui">${renderMCQ()}${renderOpen()}${renderFill()}${renderConstruction()}</section>`; }
+function renderMCQ(){ return `<article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border"><h2 class="text-xl font-bold mb-3">A — Multiple Choice</h2>${textData.quiz.mcq.map((q,i)=>{ const res=state.quiz['mcq'+i]; return `<div class="mb-5 p-3 rounded-xl bg-slate-50 dark:bg-slate-900"><p class="font-semibold">${i+1}. ${q.question}</p><div class="grid sm:grid-cols-2 gap-2 mt-2" role="radiogroup">${q.options.map(o=>{ const letter=o[0], correct=letter===q.answer, chosen=res===letter; const color=res?(correct?'bg-green-200 text-green-900':chosen?'bg-red-200 text-red-900':'bg-white dark:bg-slate-800'):'bg-white dark:bg-slate-800'; return `<button class="text-left p-3 rounded-xl border ${color}" data-action="answerMCQ" data-i="${i}" data-choice="${letter}">${o}</button>`; }).join('')}</div><button class="mt-2 text-sm underline" data-action="toggleModel" data-target="model-mcq-${i}">Show Model Answer</button><p id="model-mcq-${i}" class="hidden mt-2 text-slate-600 dark:text-slate-300">${q.model}</p></div>`; }).join('')}</article>`; }
+function renderOpen(){ return `<article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border"><h2 class="text-xl font-bold mb-3">B — Open-Ended</h2>${textData.quiz.openEnded.map((q,i)=>`<div class="mb-4"><label class="font-semibold">${q.question}<textarea class="mt-2 w-full rounded-xl border p-3 bg-slate-50 dark:bg-slate-900" rows="3"></textarea></label><button class="mt-2 underline" data-action="toggleModel" data-target="open-${i}">Show Model Answer</button><p id="open-${i}" class="hidden mt-2">${q.modelAnswer}</p></div>`).join('')}</article>`; }
+function renderFill(){ const blanks=textData.quiz.fillInTheBlank.flatMap(f=>f.blanks); return `<article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border"><div class="flex justify-between gap-2"><h2 class="text-xl font-bold">C — Fill in the Blank</h2><button class="px-3 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="toggleFill">${state.fillMode==='typed'?'Switch to Drag & Drop':'Switch to Typed'}</button></div>${textData.quiz.fillInTheBlank.map((f,i)=>`<div class="my-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900"><p>${renderBlankTemplate(f,i)}</p><p class="text-sm text-slate-500">Hint: ${f.hint}</p></div>`).join('')}${state.fillMode==='drag'?`<div class="flex flex-wrap gap-2 mt-3">${shuffle([...blanks]).map(b=>`<span draggable="true" class="px-3 py-2 rounded-xl bg-indigo-100 text-indigo-900 cursor-grab" data-drag-word="${b}">${b}</span>`).join('')}</div>`:''}<button class="mt-3 px-4 py-2 rounded-xl bg-indigo-600 text-white" data-action="checkFill">Check</button></article>`; }
+function renderBlankTemplate(f,i){ let html=f.template; f.blanks.forEach((b,j)=>{ const key=`${i}-${j}`, fb=state.fillAnswers[key]; if(state.fillMode==='typed') html=html.replace('___',`<input class="w-32 rounded-lg border p-1 bg-white dark:bg-slate-800 ${fb?fb.ok?'bg-green-100':'bg-red-100':''}" data-fill="${key}" placeholder="..."> ${fb&&!fb.ok?`<span class='text-green-700'>${b}</span>`:''}`); else html=html.replace('___',`<span tabindex="0" data-drop="${key}" class="inline-block min-w-28 border-b-2 drop-slot px-3 py-1 ${state.dragAnswers[key]?'bg-indigo-100 text-indigo-900 rounded-lg':''}">${state.dragAnswers[key]||'_____'} </span>`); }); return html; }
+function renderConstruction(){ const c=textData.constructionSentences[state.constructionIndex]; const bank=shuffle(c.words.filter((_,i)=>!state.constructionZone.includes(i)).map((w,i)=>({w,orig:c.words.indexOf(w)}))); return `<article class="p-5 rounded-2xl bg-white dark:bg-slate-800 border"><h2 class="text-xl font-bold mb-3">D — Sentence Construction</h2><p class="mb-2"><b>Prompt:</b> ${c.translation}</p><div class="min-h-16 p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border" data-construction-drop="true">${state.constructionZone.map((idx,pos)=>`<span class="inline-block m-1 px-3 py-2 rounded-xl ${state.constructionFeedback[pos]===true?'bg-green-200 text-green-900':state.constructionFeedback[pos]===false?'bg-red-200 text-red-900':'bg-white dark:bg-slate-800'}">${c.words[idx]}</span>`).join('')}</div><div class="mt-3 flex flex-wrap gap-2">${c.words.map((w,idx)=>state.constructionZone.includes(idx)?'':`<span draggable="true" class="px-3 py-2 rounded-xl bg-indigo-100 text-indigo-900 cursor-grab" data-con-word="${idx}">${w}</span>`).join('')}</div><div class="mt-4 flex flex-wrap gap-2"><button class="px-4 py-2 rounded-xl bg-indigo-600 text-white" data-action="checkConstruction">Check</button><button class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="showConstruction">Show Answer</button><button class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="prevConstruction">Previous</button><button class="px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-700" data-action="nextConstruction">Next</button></div></article>`; }
+function renderPrintOnly(){ return `<div class="print-only"><h1>${textData.title}</h1>${textData.paragraphs.map(p=>`<section><p><b>German:</b> ${p.target}</p><p><b>English:</b> ${p.base}</p></section>`).join('')}<div class="print-vocab"><h2>Vocabulary Reference</h2><table border="1" cellspacing="0" cellpadding="6"><thead><tr><th>Word</th><th>Translation</th><th>Part of Speech</th><th>Context Note</th></tr></thead><tbody>${Object.entries(textData.dictionary).filter(([w])=>!w.endsWith('2')).map(([w,e])=>`<tr><td>${w}</td><td>${e.translation}</td><td>${e.pos}</td><td>${e.context}</td></tr>`).join('')}</tbody></table></div></div>`; }
+function speak(text, karaokeId){ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='de-DE'; u.rate=state.rate; u.pitch=state.pitch; const v=state.voices.find(v=>v.voiceURI===state.voiceURI)||state.voices.find(v=>v.lang.startsWith('de')); if(v) u.voice=v; if(karaokeId){ u.onboundary=e=>{ if(e.name==='word'||e.charIndex>=0){ document.querySelectorAll(`#${karaokeId} [data-start]`).forEach(s=>s.classList.remove('karaoke-highlight')); const span=[...document.querySelectorAll(`#${karaokeId} [data-start]`)].reverse().find(s=>Number(s.dataset.start)<=e.charIndex); if(span) span.classList.add('karaoke-highlight'); }}; u.onend=()=>document.querySelectorAll(`#${karaokeId} [data-start]`).forEach(s=>s.classList.remove('karaoke-highlight')); } speechSynthesis.speak(u); }
+function wrapWords(text){ let out='', re=/[A-Za-zÄÖÜäöüßéÉ]+/g, last=0, m; while((m=re.exec(text))){ out+=escapeHTML(text.slice(last,m.index))+`<span data-start="${m.index}">${escapeHTML(m[0])}</span>`; last=re.lastIndex;} return out+escapeHTML(text.slice(last)); }
+function clean(w){ return (w||'').toLowerCase().replace(/[^a-zäöüßé]/gi,''); }
+function escapeHTML(s){ return String(s).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+function escapeAttr(s){ return escapeHTML(s).replace(/'/g,'&#39;'); }
+function shuffle(a){ return a.map(v=>[Math.random(),v]).sort((x,y)=>x[0]-y[0]).map(x=>x[1]); }
+document.addEventListener('click', async e=>{
+  const el=e.target.closest('[data-action]'); if(!el) return; const a=el.dataset.action;
+  if(a==='tab'){ state.activeTab=el.dataset.tab; save(); render(); }
+  if(a==='fontDown'){ state.fontSize=Math.max(14,state.fontSize-1); save(); render(); }
+  if(a==='fontUp'){ state.fontSize=Math.min(20,state.fontSize+1); save(); render(); }
+  if(a==='toggleDark'){ state.darkMode=!state.darkMode; save(); render(); }
+  if(a==='playText'){ speak(el.dataset.text); }
+  if(a==='playKaraoke'){ speak(el.dataset.text, el.dataset.karaoke); }
+  if(a==='playSentence'){ state.listened[el.dataset.index]=true; save(); speak(el.dataset.text, el.dataset.karaoke); render(); }
+  if(a==='selectWord'){ state.selectedWord=el.dataset.word; render(); }
+  if(a==='toggleHide'){ state.hideTranslations=!state.hideTranslations; render(); }
+  if(a==='reveal'){ el.classList.remove('blurred'); }
+  if(a==='flip'){ state.flashFlipped=!state.flashFlipped; render(); }
+  if(a==='nextCard'){ state.flashIndex++; state.flashFlipped=false; render(); }
+  if(a==='prevCard'){ state.flashIndex=Math.max(0,state.flashIndex-1); state.flashFlipped=false; render(); }
+  if(a==='known'){ if(state.flash[el.dataset.word] !== 'known') awardXP(2); state.flash[el.dataset.word]='known'; state.flashIndex++; state.flashFlipped=false; save(); render(); }
+  if(a==='review'){ state.flash[el.dataset.word]='review'; state.flashIndex++; state.flashFlipped=false; save(); render(); }
+  if(a==='answerMCQ'){ const key='mcq'+el.dataset.i; if(!state.quiz[key]){ state.quiz[key]=el.dataset.choice; if(el.dataset.choice===textData.quiz.mcq[el.dataset.i].answer) awardXP(5); save(); render(); }}
+  if(a==='toggleModel'){ document.getElementById(el.dataset.target)?.classList.toggle('hidden'); }
+  if(a==='toggleFill'){ state.fillMode=state.fillMode==='typed'?'drag':'typed'; state.fillAnswers={}; state.dragAnswers={}; render(); }
+  if(a==='checkFill'){ document.querySelectorAll('[data-fill]').forEach(inp=>{ const [i,j]=inp.dataset.fill.split('-').map(Number); const ans=textData.quiz.fillInTheBlank[i].blanks[j]; state.fillAnswers[inp.dataset.fill]={ok:inp.value.trim().toLowerCase()===ans.toLowerCase()}; }); if(state.fillMode==='drag'){ Object.keys(state.dragAnswers).forEach(k=>{ const [i,j]=k.split('-').map(Number); const ans=textData.quiz.fillInTheBlank[i].blanks[j]; state.fillAnswers[k]={ok:state.dragAnswers[k]===ans}; }); } render(); }
+  if(a==='checkConstruction'){ const c=textData.constructionSentences[state.constructionIndex]; state.constructionFeedback=state.constructionZone.map((idx,pos)=>idx===pos); render(); }
+  if(a==='showConstruction'){ const c=textData.constructionSentences[state.constructionIndex]; state.constructionZone=c.words.map((_,i)=>i); state.constructionFeedback=c.words.map(()=>true); render(); }
+  if(a==='nextConstruction'){ state.constructionIndex=(state.constructionIndex+1)%textData.constructionSentences.length; state.constructionZone=[]; state.constructionFeedback=[]; render(); }
+  if(a==='prevConstruction'){ state.constructionIndex=(state.constructionIndex-1+textData.constructionSentences.length)%textData.constructionSentences.length; state.constructionZone=[]; state.constructionFeedback=[]; render(); }
+  if(a==='record'){ try{ const stream=await navigator.mediaDevices.getUserMedia({audio:true}); const rec=new MediaRecorder(stream); const chunks=[]; rec.ondataavailable=ev=>chunks.push(ev.data); rec.onstop=()=>{ const blob=new Blob(chunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob); document.getElementById('recording-'+el.dataset.index).innerHTML=`<p class="text-sm font-semibold">Your Recording ▶</p><audio controls src="${url}"></audio>`; stream.getTracks().forEach(t=>t.stop()); }; rec.start(); state.mediaRecorders[el.dataset.index]=rec; toast('Recording started'); }catch(err){ toast('Microphone permission is needed.'); }}
+  if(a==='stopRecord'){ const rec=state.mediaRecorders[el.dataset.index]; if(rec && rec.state!=='inactive'){ rec.stop(); toast('Recording stopped'); }}
+});
+document.addEventListener('change', e=>{ const a=e.target.dataset.action; if(a==='voice'){ state.voiceURI=e.target.value; save(); } if(a==='rate'){ state.rate=Number(e.target.value); save(); } if(a==='pitch'){ state.pitch=Number(e.target.value); save(); }});
+document.addEventListener('keydown', e=>{ if(state.activeTab==='Flashcards' && ['ArrowRight','ArrowLeft','Enter',' '].includes(e.key)){ if(e.key==='ArrowRight') state.flashIndex++; if(e.key==='ArrowLeft') state.flashIndex=Math.max(0,state.flashIndex-1); if(e.key==='Enter'||e.key===' ') state.flashFlipped=!state.flashFlipped; render(); }});
+document.addEventListener('dragstart', e=>{ if(e.target.dataset.dragWord) e.dataTransfer.setData('text/plain','fill:'+e.target.dataset.dragWord); if(e.target.dataset.conWord) e.dataTransfer.setData('text/plain','con:'+e.target.dataset.conWord); });
+document.addEventListener('dragover', e=>{ if(e.target.closest('[data-drop]')||e.target.closest('[data-construction-drop]')) e.preventDefault(); });
+document.addEventListener('drop', e=>{ const data=e.dataTransfer.getData('text/plain'); const drop=e.target.closest('[data-drop]'); if(drop && data.startsWith('fill:')){ state.dragAnswers[drop.dataset.drop]=data.slice(5); render(); } const cdrop=e.target.closest('[data-construction-drop]'); if(cdrop && data.startsWith('con:')){ const idx=Number(data.slice(4)); if(!state.constructionZone.includes(idx)) state.constructionZone.push(idx); render(); }});
+function loadVoices(){ state.voices=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('de')).concat(speechSynthesis.getVoices().filter(v=>!v.lang.startsWith('de'))); if(!state.voiceURI && state.voices[0]) state.voiceURI=state.voices[0].voiceURI; render(); }
+if('speechSynthesis' in window){ speechSynthesis.onvoiceschanged=loadVoices; setTimeout(loadVoices,100); }
+initDaily(); render(); checkBadges();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>

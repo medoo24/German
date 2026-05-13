@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>German to Arabic Learning App — Einkaufen im Supermarkt</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config={darkMode:'class'};</script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root { --base-font-size: 16px; }
+    main { font-size: var(--base-font-size); }
+    .focus-ring:focus { outline: 2px solid currentColor; outline-offset: 2px; }
+    .word-tile { transition: transform .15s ease, box-shadow .15s ease; }
+    .word-tile:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(15,23,42,.12); }
+    .karaoke-highlight { background:#fde68a; border-radius:4px; transition: background .1s; color:#111827; }
+    .flash-inner { transform-style: preserve-3d; transition: transform .45s ease; }
+    .flash-inner.flipped { transform: rotateY(180deg); }
+    .flash-face { backface-visibility: hidden; }
+    .flash-back { transform: rotateY(180deg); }
+    .blurred { filter: blur(5px); cursor:pointer; user-select:none; }
+    .print-only { display:none; }
+    @media print {
+      body { font-size:12pt; line-height:1.8; color:#000; background:#fff; }
+      header, nav, button, aside, input, textarea, select, .no-print, .tab-toolbar { display:none !important; }
+      .screen-only { display:none !important; }
+      .print-only { display:block !important; }
+      .print-vocab { page-break-before: always; }
+      main { font-size:12pt !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100 min-h-screen">
+<a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:bg-white focus:text-slate-900 focus:p-3 focus:rounded-lg">Skip to content</a>
+<header class="sticky top-0 z-40 border-b border-slate-200/80 dark:border-slate-700 bg-white/90 dark:bg-slate-900/90 backdrop-blur">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3 justify-between">
+    <div>
+      <h1 class="font-bold text-xl md:text-2xl">Einkaufen im Supermarkt</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400">German → Arabic interactive reading module</p>
+    </div>
+    <div class="flex flex-wrap items-center gap-2" id="headerControls"></div>
+  </div>
+</header>
+<main id="main-content" class="max-w-7xl mx-auto px-4 py-6">
+  <nav aria-label="Learning sections" class="mb-5 overflow-x-auto">
+    <div id="tabs" role="tablist" class="flex gap-2 min-w-max"></div>
+  </nav>
+  <section id="content" aria-live="polite"></section>
+  <section class="print-only">
+    <h2 class="text-2xl font-bold mb-4">النص والترجمة</h2>
+    <div id="printText"></div>
+    <div class="print-vocab" id="printVocab"></div>
+  </section>
+</main>
+<div id="toast" class="fixed right-4 bottom-4 z-50 space-y-2"></div>
+<script>
+const textData = {
+  title: "Einkaufen im Supermarkt",
+  paragraphs: [
+    {target:"Frau Meier geht heute in den Supermarkt. Ihr Mann ist nicht zu Hause und sie nimmt den Bus. An der Haltestelle trifft sie ihre Freundin Frau Schmidt. Frau Schmidt will auch in den Supermarkt.", base:"تذهب السيدة ماير اليوم إلى السوبر ماركت. زوجها ليس في المنزل، ولذلك تركب الحافلة. عند موقف الحافلات تقابل صديقتها السيدة شميت. السيدة شميت تريد أيضًا الذهاب إلى السوبر ماركت."},
+    {target:"Frau Müller: “Das ist super! Dann fahren wir zusammen!”. Frau Schmidt: “Ja, wir kaufen ein. Danach trinken wir Kaffee und essen Kuchen. Im Café neben dem Supermarkt gibt es sehr guten Kuchen.” Frau Meier: “Gute Idee!”.", base:"السيدة مولر: «هذا رائع! إذن سنذهب معًا». السيدة شميت: «نعم، سنتسوق. بعد ذلك نشرب القهوة ونأكل الكعك. في المقهى بجانب السوبر ماركت يوجد كعك جيد جدًا». السيدة ماير: «فكرة جيدة!»."},
+    {target:"Frau Meier und Frau Schmidt gehen zusammen in den Supermarkt.", base:"تذهب السيدة ماير والسيدة شميت معًا إلى السوبر ماركت."},
+    {target:"Frau Meier: “Ich brauche Tomaten. Mein Mann will Salat essen. Ich nehme zehn Tomaten.” Frau Schmidt: “Tomaten sind gut. Ich kaufe fünf Tomaten. Da ist auch Kopfsalat.”", base:"السيدة ماير: «أحتاج إلى طماطم. زوجي يريد أن يأكل سلطة. سآخذ عشر طماطم». السيدة شميت: «الطماطم جيدة. سأشتري خمس طماطم. هناك أيضًا خسّ رأس»."},
+    {target:"Frau Meier nimmt keinen Kopfsalat. Sie nimmt aber zwei Gurken. Frau Meier kauft auch ein Kilo Zwiebeln. Frau Schmidt will Brot kaufen.", base:"السيدة ماير لا تأخذ خسّ الرأس. لكنها تأخذ خيارتين. تشتري السيدة ماير أيضًا كيلوغرامًا من البصل. السيدة شميت تريد شراء خبز."},
+    {target:"Frau Meier: “Das Brot ist nicht schön. Ich kaufe Brot in der Bäckerei. Aber die Schokolade hier ist gut. Sie kostet nur 50 Cent. Ich nehme drei Tafeln Schokolade.” Frau Schmidt: “Da ist noch ein Sonderangebot. Mineralwasser und Orangensaft sind billig.” Frau Meier: “Orangensaft habe ich zu Hause. Aber ich brauche fünf Flaschen Mineralwasser.”", base:"السيدة ماير: «الخبز هنا ليس جيدًا. سأشتري الخبز من المخبز. لكن الشوكولاتة هنا جيدة. سعرها فقط 50 سنتًا. سآخذ ثلاث ألواح شوكولاتة». السيدة شميت: «هناك عرض خاص أيضًا. المياه المعدنية وعصير البرتقال رخيصان». السيدة ماير: «لدي عصير برتقال في البيت. لكنني أحتاج إلى خمس زجاجات من المياه المعدنية»."},
+    {target:"Frau Schmidt kauft nur drei Flaschen Mineralwasser. Frau Meier und Frau Schmidt gehen an die Kasse. Dann gehen sie ins Café. Frau Schmidt trinkt eine Tasse Tee. Frau Meier mag lieber Kaffee. Sie bestellen zwei Stücke Schokoladenkuchen. Sie fahren mit dem Bus nach Hause.", base:"تشتري السيدة شميت ثلاث زجاجات فقط من المياه المعدنية. تذهب السيدة ماير والسيدة شميت إلى صندوق الدفع. ثم تذهبان إلى المقهى. تشرب السيدة شميت كوبًا من الشاي. السيدة ماير تفضّل القهوة. تطلبان قطعتين من كعكة الشوكولاتة. تعودان إلى المنزل بالحافلة."}
+  ],
+  sentences: [
+    {target:"Frau Meier geht heute in den Supermarkt.", base:"تذهب السيدة ماير اليوم إلى السوبر ماركت.", cefrLevel:"A1"},
+    {target:"Ihr Mann ist nicht zu Hause und sie nimmt den Bus.", base:"زوجها ليس في المنزل وهي تركب الحافلة.", cefrLevel:"A1"},
+    {target:"An der Haltestelle trifft sie ihre Freundin Frau Schmidt.", base:"عند موقف الحافلات تقابل صديقتها السيدة شميت.", cefrLevel:"A2"},
+    {target:"Frau Schmidt will auch in den Supermarkt.", base:"السيدة شميت تريد أيضًا الذهاب إلى السوبر ماركت.", cefrLevel:"A1"},
+    {target:"Das ist super!", base:"هذا رائع!", cefrLevel:"A1"},
+    {target:"Dann fahren wir zusammen!", base:"إذن سنذهب معًا!", cefrLevel:"A1"},
+    {target:"Ja, wir kaufen ein.", base:"نعم، سنتسوق.", cefrLevel:"A1"},
+    {target:"Danach trinken wir Kaffee und essen Kuchen.", base:"بعد ذلك نشرب القهوة ونأكل الكعك.", cefrLevel:"A1"},
+    {target:"Im Café neben dem Supermarkt gibt es sehr guten Kuchen.", base:"في المقهى بجانب السوبر ماركت يوجد كعك جيد جدًا.", cefrLevel:"A2"},
+    {target:"Gute Idee!", base:"فكرة جيدة!", cefrLevel:"A1"},
+    {target:"Ich brauche Tomaten.", base:"أحتاج إلى طماطم.", cefrLevel:"A1"},
+    {target:"Mein Mann will Salat essen.", base:"زوجي يريد أن يأكل سلطة.", cefrLevel:"A1"},
+    {target:"Ich nehme zehn Tomaten.", base:"سآخذ عشر طماطم.", cefrLevel:"A1"},
+    {target:"Tomaten sind gut.", base:"الطماطم جيدة.", cefrLevel:"A1"},
+    {target:"Ich kaufe fünf Tomaten.", base:"سأشتري خمس طماطم.", cefrLevel:"A1"},
+    {target:"Da ist auch Kopfsalat.", base:"هناك أيضًا خسّ رأس.", cefrLevel:"A1"},
+    {target:"Frau Meier nimmt keinen Kopfsalat.", base:"السيدة ماير لا تأخذ خسّ الرأس.", cefrLevel:"A2"},
+    {target:"Sie nimmt aber zwei Gurken.", base:"لكنها تأخذ خيارتين.", cefrLevel:"A1"},
+    {target:"Frau Meier kauft auch ein Kilo Zwiebeln.", base:"تشتري السيدة ماير أيضًا كيلوغرامًا من البصل.", cefrLevel:"A2"},
+    {target:"Frau Schmidt will Brot kaufen.", base:"السيدة شميت تريد شراء خبز.", cefrLevel:"A1"},
+    {target:"Das Brot ist nicht schön.", base:"الخبز ليس جيدًا.", cefrLevel:"A1"},
+    {target:"Ich kaufe Brot in der Bäckerei.", base:"سأشتري الخبز من المخبز.", cefrLevel:"A1"},
+    {target:"Aber die Schokolade hier ist gut.", base:"لكن الشوكولاتة هنا جيدة.", cefrLevel:"A1"},
+    {target:"Sie kostet nur 50 Cent.", base:"سعرها فقط 50 سنتًا.", cefrLevel:"A2"},
+    {target:"Ich nehme drei Tafeln Schokolade.", base:"سآخذ ثلاث ألواح شوكولاتة.", cefrLevel:"A2"},
+    {target:"Da ist noch ein Sonderangebot.", base:"هناك عرض خاص أيضًا.", cefrLevel:"A2"},
+    {target:"Mineralwasser und Orangensaft sind billig.", base:"المياه المعدنية وعصير البرتقال رخيصان.", cefrLevel:"A1"},
+    {target:"Orangensaft habe ich zu Hause.", base:"لدي عصير برتقال في البيت.", cefrLevel:"A2"},
+    {target:"Aber ich brauche fünf Flaschen Mineralwasser.", base:"لكنني أحتاج إلى خمس زجاجات من المياه المعدنية.", cefrLevel:"A2"},
+    {target:"Frau Schmidt kauft nur drei Flaschen Mineralwasser.", base:"تشتري السيدة شميت ثلاث زجاجات فقط من المياه المعدنية.", cefrLevel:"A2"},
+    {target:"Frau Meier und Frau Schmidt gehen an die Kasse.", base:"تذهب السيدة ماير والسيدة شميت إلى صندوق الدفع.", cefrLevel:"A2"},
+    {target:"Dann gehen sie ins Café.", base:"ثم تذهبان إلى المقهى.", cefrLevel:"A1"},
+    {target:"Frau Schmidt trinkt eine Tasse Tee.", base:"تشرب السيدة شميت كوبًا من الشاي.", cefrLevel:"A1"},
+    {target:"Frau Meier mag lieber Kaffee.", base:"السيدة ماير تفضّل القهوة.", cefrLevel:"A1"},
+    {target:"Sie bestellen zwei Stücke Schokoladenkuchen.", base:"تطلبان قطعتين من كعكة الشوكولاتة.", cefrLevel:"A2"},
+    {target:"Sie fahren mit dem Bus nach Hause.", base:"تعودان إلى المنزل بالحافلة.", cefrLevel:"A1"}
+  ],
+  dictionary: {}
+};
+const dictEntries = [
+ ['frau','سيدة/امرأة','noun','/fʁaʊ̯/','لقب مؤنث أو كلمة امرأة.',['Dame','Person'],['Mann'],['Die Frau kauft Tomaten.','Frau Schmidt trinkt Tee.']],
+ ['meier','ماير','noun','/ˈmaɪ̯ɐ/','اسم عائلة ألماني.',['Name','Familienname'],[],['Frau Meier geht einkaufen.','Meier ist ein Familienname.']],
+ ['schmidt','شميت','noun','/ʃmɪt/','اسم عائلة ألماني شائع.',['Name','Familienname'],[],['Frau Schmidt kauft Brot.','Schmidt fährt mit dem Bus.']],
+ ['müller','مولر','noun','/ˈmʏlɐ/','اسم عائلة ألماني.',['Name','Familienname'],[],['Frau Müller sagt: Das ist super.','Müller ist ein Name.']],
+ ['geht','يذهب/تذهب','verb','/ɡeːt/','صيغة المضارع من gehen مع هو/هي.',['läuft','fährt'],['bleibt'],['Frau Meier geht in den Supermarkt.','Dann geht sie ins Café.'], {present:{ich:'gehe',du:'gehst',er:'geht',wir:'gehen',sie:'gehen'},past:{ich:'ging',du:'gingst',er:'ging',wir:'gingen',sie:'gingen'},future:{ich:'werde gehen',du:'wirst gehen',er:'wird gehen',wir:'werden gehen',sie:'werden gehen'}}],
+ ['gehen','يذهبون/يذهبن','verb','/ˈɡeːən/','فعل الحركة مشيًا أو بمعنى الذهاب.',['laufen','fahren'],['bleiben'],['Wir gehen zusammen.','Sie gehen an die Kasse.'], {present:{ich:'gehe',du:'gehst',er:'geht',wir:'gehen',sie:'gehen'},past:{ich:'ging',du:'gingst',er:'ging',wir:'gingen',sie:'gingen'},future:{ich:'werde gehen',du:'wirst gehen',er:'wird gehen',wir:'werden gehen',sie:'werden gehen'}}],
+ ['heute','اليوم','adverb','/ˈhɔʏtə/','ظرف زمان يشير إلى هذا اليوم.',['jetzt','derzeit'],['gestern','morgen'],['Heute kaufe ich Brot.','Heute ist das Angebot gut.']],
+ ['in','في/إلى','preposition','/ɪn/','حرف جر يستخدم مع المكان والاتجاه.',['innerhalb','hinein'],['außerhalb'],['Sie geht in den Supermarkt.','Ich kaufe Brot in der Bäckerei.']],
+ ['den','الـ/إلى الـ','article','/deːn/','أداة تعريف للمذكر في حالة النصب.',['der'],[],['Sie nimmt den Bus.','Sie geht in den Supermarkt.']],
+ ['supermarkt','السوبر ماركت','noun','/ˈzuːpɐˌmaʁkt/','متجر كبير لشراء الطعام والاحتياجات اليومية.',['Laden','Markt'],[],['Der Supermarkt ist groß.','Im Supermarkt gibt es Tomaten.']],
+ ['ihr','زوجها/خاصتها','pronoun','/iːɐ̯/','ضمير ملكية مؤنث.',['ihre','sein'],[],['Ihr Mann ist zu Hause.','Ihre Freundin ist da.']],
+ ['mann','رجل/زوج','noun','/man/','في النص تعني الزوج.',['Ehemann','Herr'],['Frau'],['Ihr Mann will Salat essen.','Der Mann ist zu Hause.']],
+ ['ist','يكون/هو','verb','/ɪst/','صيغة المضارع من sein.',['befindet sich','existiert'],['ist nicht'],['Das ist super.','Das Brot ist nicht schön.'], {present:{ich:'bin',du:'bist',er:'ist',wir:'sind',sie:'sind'},past:{ich:'war',du:'warst',er:'war',wir:'waren',sie:'waren'},future:{ich:'werde sein',du:'wirst sein',er:'wird sein',wir:'werden sein',sie:'werden sein'}}],
+ ['nicht','ليس/لا','adverb','/nɪçt/','أداة نفي للأفعال والصفات.',['kein','nein'],['ja'],['Das Brot ist nicht schön.','Er ist nicht zu Hause.']],
+ ['zu','إلى/في','preposition','/tsuː/','حرف جر، يظهر في عبارة zu Hause.',['nach','bei'],[],['Ich bin zu Hause.','Orangensaft habe ich zu Hause.']],
+ ['hause','المنزل','noun','/ˈhaʊ̯zə/','تستخدم غالبًا في العبارة zu Hause.',['Wohnung','Heim'],[],['Sie fährt nach Hause.','Ich habe Orangensaft zu Hause.']],
+ ['und','و','conjunction','/ʊnt/','حرف عطف يربط الكلمات والجمل.',['sowie','auch'],['oder'],['Kaffee und Kuchen.','Mineralwasser und Orangensaft.']],
+ ['sie','هي/هن/هما','pronoun','/ziː/','ضمير مؤنث أو جمع حسب السياق.',['diese','jene'],[],['Sie nimmt den Bus.','Sie fahren nach Hause.']],
+ ['nimmt','يأخذ/تأخذ','verb','/nɪmt/','صيغة المضارع من nehmen.',['kauft','wählt'],['gibt'],['Sie nimmt den Bus.','Ich nehme zehn Tomaten.'], {present:{ich:'nehme',du:'nimmst',er:'nimmt',wir:'nehmen',sie:'nehmen'},past:{ich:'nahm',du:'nahmst',er:'nahm',wir:'nahmen',sie:'nahmen'},future:{ich:'werde nehmen',du:'wirst nehmen',er:'wird nehmen',wir:'werden nehmen',sie:'werden nehmen'}}],
+ ['bus','الحافلة','noun','/bʊs/','وسيلة مواصلات عامة.',['Omnibus','Verkehrsmittel'],[],['Sie nimmt den Bus.','Wir fahren mit dem Bus.']],
+ ['an','عند/إلى','preposition','/an/','حرف جر للمكان أو الاتجاه.',['bei','am'],[],['An der Haltestelle trifft sie ihre Freundin.','Sie gehen an die Kasse.']],
+ ['der','الـ','article','/deːɐ̯/','أداة تعريف للمذكر/المؤنث حسب الحالة.',['die','das'],[],['An der Haltestelle.','In der Bäckerei.']],
+ ['haltestelle','موقف الحافلات','noun','/ˈhaltəˌʃtɛlə/','مكان انتظار الحافلة أو الترام.',['Station','Bushaltestelle'],[],['An der Haltestelle trifft sie ihre Freundin.','Die Haltestelle ist neben dem Café.']],
+ ['trifft','يقابل/تقابل','verb','/tʁɪft/','صيغة المضارع من treffen.',['begegnet','sieht'],['verpasst'],['Sie trifft ihre Freundin.','Er trifft Frau Schmidt.'], {present:{ich:'treffe',du:'triffst',er:'trifft',wir:'treffen',sie:'treffen'},past:{ich:'traf',du:'trafst',er:'traf',wir:'trafen',sie:'trafen'},future:{ich:'werde treffen',du:'wirst treffen',er:'wird treffen',wir:'werden treffen',sie:'werden treffen'}}],
+ ['ihre','صديقتها/خاصتها','pronoun','/ˈiːʁə/','ضمير ملكية مؤنث.',['ihr','seine'],[],['Ihre Freundin ist da.','Sie trifft ihre Freundin.']],
+ ['freundin','صديقة','noun','/ˈfʁɔʏ̯ndɪn/','صديقة مؤنثة.',['Bekannte','Partnerin'],['Feindin'],['Frau Schmidt ist ihre Freundin.','Die Freundin kauft ein.']],
+ ['will','يريد/تريد','verb','/vɪl/','فعل مساعد للتعبير عن الرغبة.',['möchte','plant'],['muss'],['Frau Schmidt will in den Supermarkt.','Mein Mann will Salat essen.'], {present:{ich:'will',du:'willst',er:'will',wir:'wollen',sie:'wollen'},past:{ich:'wollte',du:'wolltest',er:'wollte',wir:'wollten',sie:'wollten'},future:{ich:'werde wollen',du:'wirst wollen',er:'wird wollen',wir:'werden wollen',sie:'werden wollen'}}],
+ ['auch','أيضًا','adverb','/aʊ̯x/','تضيف معنى المشاركة أو الإضافة.',['ebenfalls','genauso'],['nur'],['Frau Schmidt will auch einkaufen.','Da ist auch Kopfsalat.']],
+ ['das','هذا/الـ','pronoun','/das/','اسم إشارة أو أداة تعريف محايدة.',['dies','es'],[],['Das ist super.','Das Brot ist nicht schön.']],
+ ['dann','ثم/إذن','adverb','/dan/','يرتب الأحداث أو يوضح النتيجة.',['danach','später'],['vorher'],['Dann fahren wir zusammen.','Dann gehen sie ins Café.']],
+ ['fahren','يركبون/يذهبون بوسيلة','verb','/ˈfaːʁən/','الحركة بوسيلة مواصلات.',['reisen','gehen'],['bleiben'],['Wir fahren zusammen.','Sie fahren mit dem Bus.'], {present:{ich:'fahre',du:'fährst',er:'fährt',wir:'fahren',sie:'fahren'},past:{ich:'fuhr',du:'fuhrst',er:'fuhr',wir:'fuhren',sie:'fuhren'},future:{ich:'werde fahren',du:'wirst fahren',er:'wird fahren',wir:'werden fahren',sie:'werden fahren'}}],
+ ['wir','نحن','pronoun','/viːɐ̯/','ضمير المتكلم الجمع.',['uns'],[],['Wir kaufen ein.','Wir trinken Kaffee.']],
+ ['zusammen','معًا','adverb','/tsuˈzamən/','يعني القيام بالفعل بصورة مشتركة.',['gemeinsam','miteinander'],['allein'],['Dann fahren wir zusammen.','Sie gehen zusammen in den Supermarkt.']],
+ ['ja','نعم','adverb','/jaː/','كلمة موافقة.',['doch','genau'],['nein'],['Ja, wir kaufen ein.','Ja, das ist gut.']],
+ ['kaufen','يشترون/نشتري','verb','/ˈkaʊ̯fən/','فعل الشراء.',['erwerben','nehmen'],['verkaufen'],['Wir kaufen ein.','Frau Schmidt will Brot kaufen.'], {present:{ich:'kaufe',du:'kaufst',er:'kauft',wir:'kaufen',sie:'kaufen'},past:{ich:'kaufte',du:'kauftest',er:'kaufte',wir:'kauften',sie:'kauften'},future:{ich:'werde kaufen',du:'wirst kaufen',er:'wird kaufen',wir:'werden kaufen',sie:'werden kaufen'}}],
+ ['ein','أداة/واحد/جزء من einkaufen','article','/aɪ̯n/','تظهر هنا في الفعل المركب kaufen ein.',['eine','eins'],[],['Wir kaufen ein.','Ein Kilo Zwiebeln.']],
+ ['danach','بعد ذلك','adverb','/daˈnaːx/','ظرف يوضح ما يحدث لاحقًا.',['später','dann'],['vorher'],['Danach trinken wir Kaffee.','Danach gehen sie ins Café.']],
+ ['trinken','يشربون','verb','/ˈtʁɪŋkən/','فعل الشرب.',['nehmen','genießen'],['essen'],['Wir trinken Kaffee.','Frau Schmidt trinkt Tee.'], {present:{ich:'trinke',du:'trinkst',er:'trinkt',wir:'trinken',sie:'trinken'},past:{ich:'trank',du:'trankst',er:'trank',wir:'tranken',sie:'tranken'},future:{ich:'werde trinken',du:'wirst trinken',er:'wird trinken',wir:'werden trinken',sie:'werden trinken'}}],
+ ['kaffee','قهوة','noun','/ˈkafe/','مشروب ساخن.',['Getränk','Espresso'],['Tee'],['Wir trinken Kaffee.','Frau Meier mag Kaffee.']],
+ ['essen','يأكلون/يأكل','verb','/ˈɛsən/','فعل تناول الطعام.',['speisen','nehmen'],['trinken'],['Wir essen Kuchen.','Mein Mann will Salat essen.'], {present:{ich:'esse',du:'isst',er:'isst',wir:'essen',sie:'essen'},past:{ich:'aß',du:'aßest',er:'aß',wir:'aßen',sie:'aßen'},future:{ich:'werde essen',du:'wirst essen',er:'wird essen',wir:'werden essen',sie:'werden essen'}}],
+ ['kuchen','كعك','noun','/ˈkuːxən/','حلوى مخبوزة.',['Torte','Gebäck'],[],['Wir essen Kuchen.','Es gibt sehr guten Kuchen.']],
+ ['im','في الـ','preposition','/ɪm/','اختصار in dem.',['in dem'],[],['Im Café gibt es Kuchen.','Im Supermarkt kaufen wir ein.']],
+ ['café','مقهى','noun','/kaˈfeː/','مكان لشرب القهوة أو الشاي.',['Kaffeehaus','Lokal'],[],['Im Café gibt es Kuchen.','Dann gehen sie ins Café.']],
+ ['neben','بجانب','preposition','/ˈneːbən/','حرف جر للمجاورة.',['bei','nahe'],['gegenüber'],['Das Café ist neben dem Supermarkt.','Die Bäckerei ist neben dem Café.']],
+ ['dem','الـ','article','/deːm/','أداة تعريف في حالة الداتيف.',['der','den'],[],['Neben dem Supermarkt.','Mit dem Bus.']],
+ ['gibt','يوجد/يعطي','verb','/ɡiːpt/','في عبارة gibt es = يوجد.',['existiert','ist da'],['fehlt'],['Es gibt guten Kuchen.','Da gibt es ein Sonderangebot.'], {present:{ich:'gebe',du:'gibst',er:'gibt',wir:'geben',sie:'geben'},past:{ich:'gab',du:'gabst',er:'gab',wir:'gaben',sie:'gaben'},future:{ich:'werde geben',du:'wirst geben',er:'wird geben',wir:'werden geben',sie:'werden geben'}}],
+ ['es','هو/ذلك','pronoun','/ɛs/','ضمير محايد، ويظهر في gibt es.',['das'],[],['Es gibt Kuchen.','Es ist gut.']],
+ ['sehr','جدًا','adverb','/zeːɐ̯/','تستخدم للتقوية.',['ganz','besonders'],['wenig'],['Sehr guter Kuchen.','Das ist sehr gut.']],
+ ['guten','جيد','adjective','/ˈɡuːtən/','صفة بصيغة منصوبة/داتيف.',['leckeren','schönen'],['schlechten'],['Es gibt sehr guten Kuchen.','Ich kaufe guten Kuchen.']],
+ ['gute','جيدة','adjective','/ˈɡuːtə/','صفة مؤنثة أو جمع.',['schöne','passende'],['schlechte'],['Gute Idee!','Die Schokolade ist gute Qualität.']],
+ ['idee','فكرة','noun','/iˈdeː/','اقتراح أو تصور.',['Vorschlag','Plan'],[],['Gute Idee!','Das ist eine Idee.']],
+ ['ich','أنا','pronoun','/ɪç/','ضمير المتكلم المفرد.',['mich','mir'],[],['Ich brauche Tomaten.','Ich nehme drei Tafeln.']],
+ ['brauche','أحتاج','verb','/ˈbʁaʊ̯xə/','صيغة المضارع من brauchen.',['benötige','will'],['habe'],['Ich brauche Tomaten.','Ich brauche fünf Flaschen.'], {present:{ich:'brauche',du:'brauchst',er:'braucht',wir:'brauchen',sie:'brauchen'},past:{ich:'brauchte',du:'brauchtest',er:'brauchte',wir:'brauchten',sie:'brauchten'},future:{ich:'werde brauchen',du:'wirst brauchen',er:'wird brauchen',wir:'werden brauchen',sie:'werden brauchen'}}],
+ ['tomaten','طماطم','noun','/toˈmaːtn̩/','خضار/فاكهة تستخدم في السلطة.',['Paradeiser','Gemüse'],[],['Ich brauche Tomaten.','Tomaten sind gut.']],
+ ['mein','زوجي/ملكي','pronoun','/maɪ̯n/','ضمير ملكية للمتكلم.',['meine'],[],['Mein Mann will Salat essen.','Mein Brot ist gut.']],
+ ['salat','سلطة/خس','noun','/zaˈlaːt/','طعام من الخضروات أو كلمة خس في سياقات أخرى.',['Gemüse','Kopfsalat'],[],['Mein Mann will Salat essen.','Salat ist frisch.']],
+ ['nehme','آخذ','verb','/ˈneːmə/','صيغة ich من nehmen.',['kaufe','wähle'],['gebe'],['Ich nehme zehn Tomaten.','Ich nehme drei Tafeln.'], {present:{ich:'nehme',du:'nimmst',er:'nimmt',wir:'nehmen',sie:'nehmen'},past:{ich:'nahm',du:'nahmst',er:'nahm',wir:'nahmen',sie:'nahmen'},future:{ich:'werde nehmen',du:'wirst nehmen',er:'wird nehmen',wir:'werden nehmen',sie:'werden nehmen'}}],
+ ['zehn','عشرة','number','/tseːn/','عدد 10.',['10'],[],['Ich nehme zehn Tomaten.','Zehn ist eine Zahl.']],
+ ['sind','يكونون/هما','verb','/zɪnt/','صيغة الجمع من sein.',['sind da'],['sind nicht'],['Tomaten sind gut.','Mineralwasser und Orangensaft sind billig.'], {present:{ich:'bin',du:'bist',er:'ist',wir:'sind',sie:'sind'},past:{ich:'war',du:'warst',er:'war',wir:'waren',sie:'waren'},future:{ich:'werde sein',du:'wirst sein',er:'wird sein',wir:'werden sein',sie:'werden sein'}}],
+ ['gut','جيد','adjective','/ɡuːt/','صفة إيجابية.',['schön','lecker'],['schlecht'],['Tomaten sind gut.','Die Schokolade hier ist gut.']],
+ ['kaufe','أشتري','verb','/ˈkaʊ̯fə/','صيغة ich من kaufen.',['erwerbe','nehme'],['verkaufe'],['Ich kaufe fünf Tomaten.','Ich kaufe Brot.'], {present:{ich:'kaufe',du:'kaufst',er:'kauft',wir:'kaufen',sie:'kaufen'},past:{ich:'kaufte',du:'kauftest',er:'kaufte',wir:'kauften',sie:'kauften'},future:{ich:'werde kaufen',du:'wirst kaufen',er:'wird kaufen',wir:'werden kaufen',sie:'werden kaufen'}}],
+ ['fünf','خمسة','number','/fʏnf/','عدد 5.',['5'],[],['Ich kaufe fünf Tomaten.','Fünf Flaschen Mineralwasser.']],
+ ['da','هناك','adverb','/daː/','يشير إلى مكان أو وجود شيء.',['dort','hier'],['weg'],['Da ist Kopfsalat.','Da ist ein Sonderangebot.']],
+ ['kopfsalat','خسّ رأس','noun','/ˈkɔpfzaˌlaːt/','نوع من الخس.',['Salat','Gemüse'],[],['Da ist auch Kopfsalat.','Frau Meier nimmt keinen Kopfsalat.']],
+ ['keinen','لا/أيّ','article','/ˈkaɪ̯nən/','أداة نفي مع الاسم المذكر في النصب.',['nicht einen'],['einen'],['Sie nimmt keinen Kopfsalat.','Ich kaufe keinen Kuchen.']],
+ ['aber','لكن','conjunction','/ˈaːbɐ/','حرف استدراك.',['doch','jedoch'],['und'],['Sie nimmt aber zwei Gurken.','Aber ich brauche Mineralwasser.']],
+ ['zwei','اثنان','number','/tsvaɪ̯/','عدد 2.',['2'],[],['Sie nimmt zwei Gurken.','Zwei Stücke Kuchen.']],
+ ['gurken','خيار','noun','/ˈɡʊʁkən/','خضار طويل أخضر.',['Gemüse','Salatgurken'],[],['Sie nimmt zwei Gurken.','Gurken sind frisch.']],
+ ['kauft','يشتري/تشتري','verb','/kaʊ̯ft/','صيغة er/sie من kaufen.',['nimmt','erwirbt'],['verkauft'],['Frau Meier kauft Zwiebeln.','Frau Schmidt kauft Mineralwasser.'], {present:{ich:'kaufe',du:'kaufst',er:'kauft',wir:'kaufen',sie:'kaufen'},past:{ich:'kaufte',du:'kauftest',er:'kaufte',wir:'kauften',sie:'kauften'},future:{ich:'werde kaufen',du:'wirst kaufen',er:'wird kaufen',wir:'werden kaufen',sie:'werden kaufen'}}],
+ ['kilo','كيلوغرام','noun','/ˈkiːlo/','وحدة وزن.',['Kilogramm','Gewicht'],[],['Ein Kilo Zwiebeln.','Ich kaufe ein Kilo.']],
+ ['zwiebeln','بصل','noun','/ˈtsviːbəln/','خضار ذو رائحة قوية.',['Gemüse','Knollen'],[],['Frau Meier kauft Zwiebeln.','Ein Kilo Zwiebeln kostet wenig.']],
+ ['brot','خبز','noun','/bʁoːt/','طعام مخبوز أساسي.',['Backware','Laib'],[],['Frau Schmidt will Brot kaufen.','Das Brot ist nicht schön.']],
+ ['schön','جميل/جيد','adjective','/ʃøːn/','هنا تعني جيد الشكل أو مناسب.',['gut','hübsch'],['schlecht'],['Das Brot ist nicht schön.','Der Kuchen ist schön.']],
+ ['bäckerei','مخبز','noun','/bɛkəˈʁaɪ̯/','مكان شراء الخبز والمخبوزات.',['Bäcker','Backstube'],[],['Ich kaufe Brot in der Bäckerei.','Die Bäckerei ist neben dem Supermarkt.']],
+ ['die','الـ','article','/diː/','أداة تعريف مؤنثة أو جمع.',['der','das'],[],['Die Schokolade ist gut.','Die Kasse ist dort.']],
+ ['schokolade','شوكولاتة','noun','/ʃokoˈlaːdə/','حلوى من الكاكاو.',['Süßigkeit','Tafel'],[],['Die Schokolade hier ist gut.','Ich nehme drei Tafeln Schokolade.']],
+ ['hier','هنا','adverb','/hiːɐ̯/','يشير إلى المكان القريب.',['da','an diesem Ort'],['dort'],['Die Schokolade hier ist gut.','Hier gibt es Kuchen.']],
+ ['kostet','يكلف/سعره','verb','/ˈkɔstət/','فعل السعر.',['beträgt','ist wert'],[],['Sie kostet nur 50 Cent.','Das Brot kostet zwei Euro.'], {present:{ich:'koste',du:'kostest',er:'kostet',wir:'kosten',sie:'kosten'},past:{ich:'kostete',du:'kostetest',er:'kostete',wir:'kosteten',sie:'kosteten'},future:{ich:'werde kosten',du:'wirst kosten',er:'wird kosten',wir:'werden kosten',sie:'werden kosten'}}],
+ ['nur','فقط','adverb','/nuːɐ̯/','يفيد الحصر.',['bloß','lediglich'],['auch'],['Sie kostet nur 50 Cent.','Sie kauft nur drei Flaschen.']],
+ ['cent','سنت','noun','/tsɛnt/','وحدة نقدية صغيرة.',['Geld','Münze'],[],['Sie kostet 50 Cent.','Ein Cent ist wenig Geld.']],
+ ['drei','ثلاثة','number','/dʁaɪ̯/','عدد 3.',['3'],[],['Ich nehme drei Tafeln.','Sie kauft drei Flaschen.']],
+ ['tafeln','ألواح','noun','/ˈtaːfəln/','وحدة عد لألواح الشوكولاتة.',['Stücke','Platten'],[],['Drei Tafeln Schokolade.','Eine Tafel Schokolade kostet 50 Cent.']],
+ ['noch','ما زال/أيضًا','adverb','/nɔx/','يعني شيء إضافي أو مستمر.',['zusätzlich','weiter'],['nicht mehr'],['Da ist noch ein Sonderangebot.','Ich brauche noch Wasser.']],
+ ['sonderangebot','عرض خاص','noun','/ˈzɔndɐʔanɡəˌboːt/','سعر مخفض أو عرض مؤقت.',['Angebot','Rabatt'],[],['Da ist ein Sonderangebot.','Das Sonderangebot ist billig.']],
+ ['mineralwasser','مياه معدنية','noun','/mineˈʁaːlˌvasɐ/','ماء للشرب غالبًا في زجاجات.',['Wasser','Sprudel'],[],['Mineralwasser ist billig.','Ich brauche fünf Flaschen Mineralwasser.']],
+ ['orangensaft','عصير برتقال','noun','/oˈʁaŋənˌzaft/','مشروب من البرتقال.',['Saft','Fruchtsaft'],[],['Orangensaft ist billig.','Orangensaft habe ich zu Hause.']],
+ ['billig','رخيص','adjective','/ˈbɪlɪç/','قليل السعر.',['günstig','preiswert'],['teuer'],['Mineralwasser und Orangensaft sind billig.','Das Angebot ist billig.']],
+ ['habe','لدي/أملك','verb','/ˈhaːbə/','صيغة ich من haben.',['besitze','habe da'],['brauche'],['Orangensaft habe ich zu Hause.','Ich habe Brot.'], {present:{ich:'habe',du:'hast',er:'hat',wir:'haben',sie:'haben'},past:{ich:'hatte',du:'hattest',er:'hatte',wir:'hatten',sie:'hatten'},future:{ich:'werde haben',du:'wirst haben',er:'wird haben',wir:'werden haben',sie:'werden haben'}}],
+ ['flaschen','زجاجات','noun','/ˈflaʃən/','أوعية للسوائل.',['Behälter','Fläschchen'],[],['Fünf Flaschen Mineralwasser.','Drei Flaschen Wasser.']],
+ ['kasse','صندوق الدفع','noun','/ˈkasə/','مكان دفع النقود في المتجر.',['Kassentisch','Zahlstelle'],[],['Sie gehen an die Kasse.','Die Kasse ist vorne.']],
+ ['ins','إلى الـ','preposition','/ɪns/','اختصار in das.',['in das'],[],['Dann gehen sie ins Café.','Sie gehen ins Haus.']],
+ ['trinkt','يشرب/تشرب','verb','/tʁɪŋkt/','صيغة er/sie من trinken.',['nimmt','genießt'],['isst'],['Frau Schmidt trinkt Tee.','Sie trinkt eine Tasse.'], {present:{ich:'trinke',du:'trinkst',er:'trinkt',wir:'trinken',sie:'trinken'},past:{ich:'trank',du:'trankst',er:'trank',wir:'tranken',sie:'tranken'},future:{ich:'werde trinken',du:'wirst trinken',er:'wird trinken',wir:'werden trinken',sie:'werden trinken'}}],
+ ['eine','واحدة/أداة نكرة','article','/ˈaɪ̯nə/','أداة نكرة للمؤنث أو عدد واحد.',['ein','eins'],[],['Eine Tasse Tee.','Eine gute Idee.']],
+ ['tasse','كوب/فنجان','noun','/ˈtasə/','وعاء صغير للشاي أو القهوة.',['Becher','Gefäß'],[],['Eine Tasse Tee.','Die Tasse ist klein.']],
+ ['tee','شاي','noun','/teː/','مشروب ساخن.',['Getränk','Kräutertee'],['Kaffee'],['Frau Schmidt trinkt Tee.','Der Tee ist heiß.']],
+ ['mag','يحب/يفضل','verb','/maːk/','صيغة من mögen.',['liebt','bevorzugt'],['hasst'],['Frau Meier mag Kaffee.','Ich mag Schokolade.'], {present:{ich:'mag',du:'magst',er:'mag',wir:'mögen',sie:'mögen'},past:{ich:'mochte',du:'mochtest',er:'mochte',wir:'mochten',sie:'mochten'},future:{ich:'werde mögen',du:'wirst mögen',er:'wird mögen',wir:'werden mögen',sie:'werden mögen'}}],
+ ['lieber','أكثر تفضيلًا','adverb','/ˈliːbɐ/','تعني يفضل شيئًا على شيء.',['eher','mehr'],['weniger'],['Frau Meier mag lieber Kaffee.','Ich trinke lieber Tee.']],
+ ['bestellen','يطلبون','verb','/bəˈʃtɛlən/','طلب شيء في مطعم أو مقهى.',['ordern','fordern'],['stornieren'],['Sie bestellen Kuchen.','Wir bestellen zwei Stücke.'], {present:{ich:'bestelle',du:'bestellst',er:'bestellt',wir:'bestellen',sie:'bestellen'},past:{ich:'bestellte',du:'bestelltest',er:'bestellte',wir:'bestellten',sie:'bestellten'},future:{ich:'werde bestellen',du:'wirst bestellen',er:'wird bestellen',wir:'werden bestellen',sie:'werden bestellen'}}],
+ ['stücke','قطع','noun','/ˈʃtʏkə/','جمع قطعة.',['Teile','Portionen'],[],['Zwei Stücke Schokoladenkuchen.','Ein Stück Kuchen ist süß.']],
+ ['schokoladenkuchen','كعكة شوكولاتة','noun','/ʃokoˈlaːdn̩ˌkuːxən/','كعك مصنوع بالشوكولاتة.',['Kuchen','Torte'],[],['Sie bestellen Schokoladenkuchen.','Der Schokoladenkuchen ist gut.']],
+ ['mit','بـ/مع','preposition','/mɪt/','حرف جر للمرافقة أو الوسيلة.',['zusammen mit','per'],['ohne'],['Mit dem Bus.','Sie fahren mit Frau Schmidt.']],
+ ['nach','إلى','preposition','/naːx/','حرف جر للاتجاه، خاصة المدن/البيت.',['zu','in Richtung'],['von'],['Sie fahren nach Hause.','Nach dem Einkaufen trinken sie Kaffee.']]
+];
+for (const e of dictEntries){ textData.dictionary[e[0]]={translation:e[1],pos:e[2],ipa:e[3],context:e[4],synonyms:e[5]||[],antonyms:e[6]||[],examples:e[7]||[],conjugation:e[8]||null}; }
+textData.grammar = [
+ {title:'Verbs in the present tense', explanation:'Many sentences use present-tense verbs such as geht, nimmt, kauft, trinkt, and fährt. In German, the verb form changes with the subject.', examples:['Frau Meier <b>geht</b> heute in den Supermarkt.','Frau Schmidt <b>trinkt</b> eine Tasse Tee.']},
+ {title:'Negation with nicht and kein', explanation:'Nicht negates verbs or adjectives, while kein negates nouns with an article-like ending.', examples:['Ihr Mann ist <b>nicht</b> zu Hause.','Frau Meier nimmt <b>keinen</b> Kopfsalat.']},
+ {title:'Word order after time words', explanation:'German often places the conjugated verb in second position. After time words like dann and danach, the verb comes immediately after the time expression.', examples:['<b>Danach trinken</b> wir Kaffee und essen Kuchen.','<b>Dann fahren</b> wir zusammen!']},
+ {title:'Accusative objects after kaufen/nehmen/brauchen', explanation:'Objects being bought, taken, or needed often appear after verbs like kaufen, nehmen, and brauchen.', examples:['Ich <b>brauche Tomaten</b>.','Ich <b>nehme zehn Tomaten</b>.']},
+ {title:'Prepositions for places and movement', explanation:'The text uses in, an, neben, mit, and nach to describe location, direction, or transport.', examples:['An der Haltestelle trifft sie ihre Freundin Frau Schmidt.','Sie fahren <b>mit dem Bus nach Hause</b>.']}
+];
+textData.quiz = {
+ mcq:[
+  {question:'Where does Frau Meier go today?', options:['A. In den Supermarkt','B. In die Schule','C. Ins Krankenhaus','D. In den Park'], answer:'A', model:'Frau Meier geht heute in den Supermarkt.'},
+  {question:'Who does Frau Meier meet at the bus stop?', options:['A. Ihren Mann','B. Frau Schmidt','C. Den Bäcker','D. Paul'], answer:'B', model:'Sie trifft ihre Freundin Frau Schmidt.'},
+  {question:'What does Frau Meier need for salad?', options:['A. Tee','B. Tomaten','C. Reis','D. Käse'], answer:'B', model:'Sie braucht Tomaten.'},
+  {question:'Where do the two women go after the checkout?', options:['A. Nach Hause sofort','B. In die Bäckerei','C. Ins Café','D. In die Klasse'], answer:'C', model:'Dann gehen sie ins Café.'}
+ ],
+ openEnded:[
+  {question:'Why does Frau Meier take the bus?', modelAnswer:'Because her husband is not at home: Ihr Mann ist nicht zu Hause und sie nimmt den Bus.'},
+  {question:'What do they order in the café?', modelAnswer:'They order two pieces of chocolate cake. Frau Schmidt drinks tea, and Frau Meier prefers coffee.'}
+ ],
+ fillInTheBlank:[
+  {template:'Frau Meier geht heute in den ___.', blanks:['Supermarkt'], hint:'place'},
+  {template:'Ich nehme zehn ___.', blanks:['Tomaten'], hint:'plural noun'},
+  {template:'Sie kostet nur 50 ___.', blanks:['Cent'], hint:'money'},
+  {template:'Sie fahren mit dem Bus nach ___.', blanks:['Hause'], hint:'place expression'}
+ ]
+};
+textData.constructionSentences = [
+ {words:['Frau','Meier','geht','heute','in','den','Supermarkt'], translation:'تذهب السيدة ماير اليوم إلى السوبر ماركت.'},
+ {words:['Danach','trinken','wir','Kaffee','und','essen','Kuchen'], translation:'بعد ذلك نشرب القهوة ونأكل الكعك.'},
+ {words:['Ich','nehme','drei','Tafeln','Schokolade'], translation:'سآخذ ثلاث ألواح شوكولاتة.'},
+ {words:['Sie','fahren','mit','dem','Bus','nach','Hause'], translation:'تعودان إلى المنزل بالحافلة.'}
+];
+const POS_COLORS={verb:'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/40 dark:text-blue-100',noun:'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/40 dark:text-rose-100',adjective:'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/40 dark:text-green-100',adverb:'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/40 dark:text-amber-100',pronoun:'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/40 dark:text-purple-100',conjunction:'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-100',preposition:'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-100',article:'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700 dark:text-slate-100',number:'bg-cyan-100 text-cyan-800 border-cyan-200 dark:bg-cyan-900/40 dark:text-cyan-100'};
+const tabs=[['paragraphs','Paragraphs'],['sentences','Sentences'],['words','Word-by-Word'],['grammar','Grammar'],['flashcards','Flashcards'],['quiz','Quiz']];
+const state={activeTab:localStorage.langApp_activeTab||'paragraphs',fontSize:+(localStorage.langApp_fontSize||16),dark:localStorage.langApp_darkMode==='true',xp:+(localStorage.langApp_xp||0),streak:+(localStorage.langApp_streak||0),selectedWord:'frau',hideTranslations:false,voices:[],voiceURI:localStorage.langApp_voiceURI||'',rate:+(localStorage.langApp_rate||.95),pitch:+(localStorage.langApp_pitch||1),flashIndex:0,flashFlipped:false,reviewed:new Set(),quizIndex:0,blankMode:'typed',constructIndex:0,constructed:[],recorders:{},chunks:{}};
+let listened=JSON.parse(localStorage.langApp_listened||'{}'), quizResults=JSON.parse(localStorage.langApp_quiz||'{}'), mastery=JSON.parse(localStorage.langApp_mastery||'{}'), badges=JSON.parse(localStorage.langApp_badges||'{}');
+function save(){localStorage.langApp_activeTab=state.activeTab;localStorage.langApp_fontSize=state.fontSize;localStorage.langApp_darkMode=state.dark;localStorage.langApp_xp=state.xp;localStorage.langApp_streak=state.streak;localStorage.langApp_listened=JSON.stringify(listened);localStorage.langApp_quiz=JSON.stringify(quizResults);localStorage.langApp_mastery=JSON.stringify(mastery);localStorage.langApp_badges=JSON.stringify(badges);localStorage.langApp_rate=state.rate;localStorage.langApp_pitch=state.pitch;localStorage.langApp_voiceURI=state.voiceURI;}
+function initDaily(){const today=new Date().toISOString().slice(0,10);const last=localStorage.langApp_lastVisit;if(last!==today){const yesterday=new Date(Date.now()-86400000).toISOString().slice(0,10);state.streak=(last===yesterday)?state.streak+1:1;state.xp+=10;localStorage.langApp_lastVisit=today;toast('Daily visit +10 XP');save();}}
+function checkBadges(){const known=Object.values(mastery).filter(v=>v==='known').length;const rules={firstQuiz: Object.keys(quizResults).length>0, xp50: state.xp>=50, known10: known>=10, streak7: state.streak>=7};Object.entries(rules).forEach(([k,v])=>{if(v&&!badges[k]){badges[k]=true;toast('Badge earned: '+k);}});save();}
+function toast(msg){const el=document.createElement('div');el.className='bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg';el.textContent=msg;document.getElementById('toast').appendChild(el);setTimeout(()=>el.remove(),3000);}
+function setTheme(){document.documentElement.classList.toggle('dark',state.dark);document.documentElement.style.setProperty('--base-font-size',state.fontSize+'px');}
+function renderHeader(){const xpPct=state.xp%50*2;document.getElementById('headerControls').innerHTML=`
+ <button class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800" data-action="fontDown">A−</button>
+ <button class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800" data-action="fontUp">A+</button>
+ <button class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800" data-action="toggleDark" aria-pressed="${state.dark}"><i data-lucide="moon" class="w-4 h-4 inline"></i></button>
+ <span class="px-3 py-2 rounded-lg bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-100">${state.xp} XP · 🔥 ${state.streak} days <span class="inline-block align-middle w-20 h-2 bg-indigo-200 rounded-full ml-2"><span class="block h-2 bg-indigo-600 rounded-full" style="width:${xpPct}%"></span></span></span>
+ <button class="focus-ring px-3 py-2 rounded-lg bg-emerald-600 text-white" data-action="playFull"><i data-lucide="volume-2" class="w-4 h-4 inline"></i> Play Full Text</button>
+ <details class="relative"><summary class="cursor-pointer focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800">Voice</summary><div class="absolute right-0 mt-2 p-3 bg-white dark:bg-slate-800 border dark:border-slate-700 rounded-xl shadow-xl w-72 z-50"><label class="block text-sm">Voice<select class="mt-1 w-full p-2 rounded border dark:bg-slate-900" data-action="voiceSelect">${state.voices.map(v=>`<option value="${v.voiceURI}" ${v.voiceURI===state.voiceURI?'selected':''}>${v.name} (${v.lang})</option>`).join('')}</select></label><label class="block text-sm mt-2">Speed <input type="range" min="0.6" max="1.3" step="0.05" value="${state.rate}" data-action="rate" class="w-full"></label><label class="block text-sm mt-2">Pitch <input type="range" min="0.7" max="1.3" step="0.05" value="${state.pitch}" data-action="pitch" class="w-full"></label></div></details>`; if(window.lucide) lucide.createIcons();}
+function renderTabs(){document.getElementById('tabs').innerHTML=tabs.map(([id,label])=>`<button role="tab" aria-selected="${state.activeTab===id}" class="focus-ring px-4 py-2 rounded-xl border ${state.activeTab===id?'bg-indigo-600 text-white border-indigo-600':'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}" data-action="tab" data-tab="${id}">${label}</button>`).join('');}
+function speak(text, markId){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang='de-DE';u.rate=state.rate;u.pitch=state.pitch;const v=state.voices.find(x=>x.voiceURI===state.voiceURI)||state.voices.find(x=>x.lang.startsWith('de'));if(v)u.voice=v;if(markId!==undefined){listened[markId]=true;save();renderContent();}u.onboundary=e=>{document.querySelectorAll('.karaoke-highlight').forEach(x=>x.classList.remove('karaoke-highlight'));const box=document.querySelector(`[data-karaoke-box="${markId}"]`);if(box){const spans=[...box.querySelectorAll('[data-start]')];const best=spans.reverse().find(s=>+s.dataset.start<=e.charIndex);if(best)best.classList.add('karaoke-highlight');}};speechSynthesis.speak(u);}
+function wrapWords(text,id){let out='',idx=0;for(const part of text.match(/\S+|\s+/g)||[]){if(/\s+/.test(part)){out+=part;idx+=part.length;}else{out+=`<span data-start="${idx}">${part}</span>`;idx+=part.length;}}return `<span data-karaoke-box="${id}">${out}</span>`;}
+function maybeBlur(txt,key){return state.hideTranslations?`<span tabindex="0" class="blurred" data-action="reveal" data-key="${key}">${txt}</span>`:txt;}
+function renderContent(){renderTabs();checkBadges();const c=document.getElementById('content'); if(state.activeTab==='paragraphs') c.innerHTML=renderParagraphs(); if(state.activeTab==='sentences') c.innerHTML=renderSentences(); if(state.activeTab==='words') c.innerHTML=renderWords(); if(state.activeTab==='grammar') c.innerHTML=renderGrammar(); if(state.activeTab==='flashcards') c.innerHTML=renderFlashcards(); if(state.activeTab==='quiz') c.innerHTML=renderQuiz(); renderPrint(); if(window.lucide) lucide.createIcons();}
+function card(cls,inner){return `<article class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-5 shadow-sm ${cls||''}">${inner}</article>`;}
+function renderParagraphs(){return `<div class="grid gap-4">${textData.paragraphs.map((p,i)=>card('',`<div class="flex gap-2 mb-3"><button class="focus-ring px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(p.target)}" data-mark="p${i}">Play</button><button class="focus-ring px-3 py-2 rounded-lg bg-amber-100 text-amber-900" data-action="speakKaraoke" data-text="${encodeURIComponent(p.target)}" data-mark="p${i}">Karaoke Mode</button></div><p class="font-semibold leading-8">${wrapWords(p.target,'p'+i)}</p><p dir="rtl" class="mt-3 text-slate-600 dark:text-slate-300 leading-8">${p.base}</p>`)).join('')}</div>`;}
+function cefrClass(l){return l==='C1'?'bg-red-100 text-red-800':(l==='B1'||l==='B2')?'bg-amber-100 text-amber-800':'bg-green-100 text-green-800';}
+function renderSentences(){return `<div class="grid gap-3">${textData.sentences.map((s,i)=>card('',`<div class="flex flex-wrap items-center gap-2 mb-2"><span class="px-2 py-1 rounded-full text-xs ${cefrClass(s.cefrLevel)}">${s.cefrLevel}</span>${listened['s'+i]?'<span class="text-emerald-600">✓ listened</span>':''}<button class="focus-ring px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(s.target)}" data-mark="s${i}">TTS Reference ▶</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700" data-action="record" data-index="${i}">Record</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 hidden" data-action="stopRecord" data-index="${i}" id="stop-${i}">Stop</button></div><p class="font-semibold">${wrapWords(s.target,'s'+i)}</p><p dir="rtl" class="mt-2 text-slate-600 dark:text-slate-300">${maybeBlur(s.base,'sent'+i)}</p><div id="audio-${i}" class="mt-2 text-sm"></div>`)).join('')}</div>`;}
+function normalize(w){return w.toLowerCase().replace(/[“”".!?,:;()]/g,'').replace(/\.$/,'');}
+function renderWords(){const words=textData.paragraphs.map(p=>p.target).join(' ').match(/[A-Za-zÄÖÜäöüßéÉ]+/g)||[];return `<div class="tab-toolbar mb-4 flex justify-between items-center"><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="toggleHide">${state.hideTranslations?'Show':'Hide'} Translations</button></div><div class="grid lg:grid-cols-[1fr_340px] gap-5"><section class="flex flex-wrap gap-2">${words.map(w=>{const key=normalize(w);const d=textData.dictionary[key]||{};return `<button class="word-tile focus-ring border rounded-xl px-3 py-2 ${POS_COLORS[d.pos]||POS_COLORS.noun}" data-action="selectWord" data-word="${key}">${w}</button>`}).join('')}</section><aside class="sticky top-28 self-start">${renderWordPanel()}</aside></div>`;}
+function renderWordPanel(){const d=textData.dictionary[state.selectedWord]; if(!d)return card('',`<h2 class="text-xl font-bold">${state.selectedWord}</h2><p>Definition not found. Try a dictionary.</p>`);return card('',`<h2 class="text-3xl font-bold mb-1">${state.selectedWord}</h2><p class="text-slate-500 mb-2">${d.ipa}</p><span class="inline-block px-2 py-1 rounded-full text-xs border ${POS_COLORS[d.pos]||''}">${d.pos}</span><p dir="rtl" class="mt-4 text-lg font-semibold">${maybeBlur(d.translation,'word_'+state.selectedWord)}</p><p class="mt-3 text-slate-600 dark:text-slate-300">${d.context}</p><h3 class="font-bold mt-4">Synonyms</h3><div class="flex flex-wrap gap-2 mt-1">${d.synonyms.map(x=>`<span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${x}</span>`).join('')}</div>${d.antonyms.length?`<h3 class="font-bold mt-4">Antonyms</h3><div class="flex flex-wrap gap-2 mt-1">${d.antonyms.map(x=>`<span class="px-2 py-1 rounded-full bg-slate-100 dark:bg-slate-700">${x}</span>`).join('')}</div>`:''}<h3 class="font-bold mt-4">Examples</h3>${d.examples.map(e=>`<blockquote class="border-l-4 border-indigo-300 pl-3 my-2 text-sm">${e}</blockquote>`).join('')}<button class="focus-ring mt-3 px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(state.selectedWord)}">Play word</button>${d.conjugation?renderConj(d.conjugation):''}`);}
+function renderConj(c){const heads=['ich','du','er','wir','sie'];return `<h3 class="font-bold mt-4">Conjugation</h3><div class="overflow-x-auto"><table class="text-xs mt-2 w-full border"><thead><tr><th></th>${heads.map(h=>`<th class="border p-1">${h}</th>`).join('')}</tr></thead><tbody>${Object.entries(c).map(([t,row])=>`<tr><th class="border p-1">${t}</th>${heads.map(h=>`<td tabindex="0" class="border p-1 focus-ring">${row[h]}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;}
+function renderGrammar(){return `<div class="grid gap-4">${textData.grammar.map((g,i)=>card('',`<h2 class="text-xl font-bold">${g.title}</h2><p class="mt-2 text-slate-600 dark:text-slate-300">${g.explanation}</p>${g.examples.map(ex=>`<div class="mt-3 p-3 rounded-xl bg-slate-50 dark:bg-slate-900"><p>${ex}</p><button class="focus-ring mt-2 text-sm px-3 py-1 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(ex.replace(/<[^>]*>/g,''))}">Play</button></div>`).join('')}`)).join('')}</div>`;}
+const flashWords=Object.keys(textData.dictionary);
+function renderFlashcards(){const w=flashWords[state.flashIndex%flashWords.length],d=textData.dictionary[w];const reviewed=state.reviewed.size;return card('max-w-2xl mx-auto text-center',`<p class="mb-3 text-slate-500">${state.flashIndex+1} of ${flashWords.length} · ${reviewed} reviewed this session</p><div class="w-full h-2 bg-slate-200 rounded-full mb-4"><div class="h-2 bg-emerald-600 rounded-full" style="width:${reviewed/flashWords.length*100}%"></div></div><div tabindex="0" class="focus-ring relative h-64 cursor-pointer" data-action="flip"><div class="flash-inner ${state.flashFlipped?'flipped':''} absolute inset-0"><div class="flash-face absolute inset-0 rounded-2xl bg-indigo-50 dark:bg-indigo-950 border flex flex-col items-center justify-center p-5"><h2 class="text-4xl font-bold">${w}</h2><p class="mt-2">${d.ipa}</p><button class="focus-ring mt-4 px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(w)}">Play</button></div><div class="flash-face flash-back absolute inset-0 rounded-2xl bg-emerald-50 dark:bg-emerald-950 border flex flex-col items-center justify-center p-5"><p dir="rtl" class="text-3xl font-bold">${d.translation}</p><span class="mt-2 px-2 py-1 rounded-full border ${POS_COLORS[d.pos]||''}">${d.pos}</span><p class="mt-3">${d.examples[0]||''}</p><button class="focus-ring mt-4 px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="speak" data-text="${encodeURIComponent(w)}">Play</button></div></div></div><div class="flex justify-center gap-2 mt-5 flex-wrap"><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="prevFlash">Previous</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="nextFlash">Next</button><button class="focus-ring px-3 py-2 rounded-lg bg-emerald-600 text-white" data-action="known">Known +2 XP</button><button class="focus-ring px-3 py-2 rounded-lg bg-orange-500 text-white" data-action="review">Needs Review</button></div>`);}
+function renderQuiz(){return `<div class="grid gap-5">${renderMCQ()}${renderOpen()}${renderBlanks()}${renderConstruction()}</div>`;}
+function renderMCQ(){const q=textData.quiz.mcq[state.quizIndex];const res=quizResults['q'+state.quizIndex];return card('',`<h2 class="text-xl font-bold">Multiple Choice</h2><p class="mt-3 font-semibold">${q.question}</p><div class="grid gap-2 mt-3" role="radiogroup">${q.options.map(o=>{const letter=o[0];let cls='bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700';if(res){if(letter===q.answer)cls='bg-emerald-100 text-emerald-900 border-emerald-400';else if(letter===res.chosen)cls='bg-red-100 text-red-900 border-red-400';}return `<button class="focus-ring text-left p-3 rounded-xl border ${cls}" data-action="answer" data-letter="${letter}">${o}</button>`}).join('')}</div>${res?`<details class="mt-3"><summary class="cursor-pointer">Show Model Answer</summary><p class="mt-2 text-slate-600 dark:text-slate-300">${q.model}</p></details>`:''}<div class="mt-4 flex gap-2"><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="prevQuiz">Previous</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="nextQuiz">Next</button></div>`);}
+function renderOpen(){return card('',`<h2 class="text-xl font-bold">Open-Ended Questions</h2>${textData.quiz.openEnded.map((q,i)=>`<div class="mt-4"><label class="font-semibold">${q.question}</label><textarea class="focus-ring mt-2 w-full min-h-24 p-3 rounded-xl border dark:bg-slate-900 dark:border-slate-700"></textarea><details class="mt-2"><summary class="cursor-pointer">Show Model Answer</summary><p class="mt-2" dir="ltr">${q.modelAnswer}</p></details></div>`).join('')}`);}
+function renderBlanks(){const all=textData.quiz.fillInTheBlank.flatMap(x=>x.blanks).sort(()=>.5-Math.random());return card('',`<h2 class="text-xl font-bold">Fill in the Blank</h2><button class="focus-ring mt-3 px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="toggleBlank">Mode: ${state.blankMode}</button><div class="mt-4 grid gap-3">${textData.quiz.fillInTheBlank.map((b,i)=>`<div class="p-3 rounded-xl bg-slate-50 dark:bg-slate-900"><p>${state.blankMode==='typed'?b.template.replace('___',`<input class="focus-ring blank-input w-32 p-1 rounded border dark:bg-slate-800" data-answer="${b.blanks[0]}">`):b.template.replace('___',`<span class="inline-block min-w-32 border-b-2 p-1 blank-drop" ondragover="event.preventDefault()" data-answer="${b.blanks[0]}"></span>`)}</p><p class="text-xs text-slate-500">Hint: ${b.hint}</p></div>`).join('')}</div>${state.blankMode==='drag'?`<div class="mt-3 flex flex-wrap gap-2">${all.map(w=>`<span draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${w}')" class="px-3 py-2 rounded-lg bg-indigo-100 text-indigo-900 cursor-move">${w}</span>`).join('')}</div>`:''}<button class="focus-ring mt-4 px-3 py-2 rounded-lg bg-emerald-600 text-white" data-action="checkBlanks">Check</button>`);}
+function renderConstruction(){const item=textData.constructionSentences[state.constructIndex]; if(!state.constructed.length)state.constructed=[];const bank=item.words.slice().sort(()=>.5-Math.random());return card('',`<h2 class="text-xl font-bold">Sentence Construction</h2><p dir="rtl" class="mt-2 text-lg">${item.translation}</p><div class="mt-4 min-h-16 p-3 rounded-xl border-2 border-dashed flex flex-wrap gap-2 construct-zone" ondragover="event.preventDefault()"></div><div class="mt-4 flex flex-wrap gap-2">${bank.map((w,i)=>`<button draggable="true" ondragstart="event.dataTransfer.setData('text/plain','${w}')" class="focus-ring px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 cursor-move">${w}</button>`).join('')}</div><div class="mt-4 flex gap-2 flex-wrap"><button class="focus-ring px-3 py-2 rounded-lg bg-emerald-600 text-white" data-action="checkConstruct">Check</button><button class="focus-ring px-3 py-2 rounded-lg bg-indigo-600 text-white" data-action="showConstruct">Show Answer</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="prevConstruct">Previous</button><button class="focus-ring px-3 py-2 rounded-lg bg-slate-200 dark:bg-slate-700" data-action="nextConstruct">Next</button></div>`);}
+function renderPrint(){document.getElementById('printText').innerHTML=textData.paragraphs.map(p=>`<p><b>${p.target}</b></p><p dir="rtl">${p.base}</p>`).join('');document.getElementById('printVocab').innerHTML=`<h2>Vocabulary Reference</h2><table border="1" cellpadding="6" cellspacing="0"><thead><tr><th>Word</th><th>Translation</th><th>Part of Speech</th><th>Context Note</th></tr></thead><tbody>${Object.entries(textData.dictionary).map(([w,d])=>`<tr><td>${w}</td><td dir="rtl">${d.translation}</td><td>${d.pos}</td><td>${d.context}</td></tr>`).join('')}</tbody></table>`;}
+function handleAction(e){const a=e.target.closest('[data-action]'); if(!a)return; const act=a.dataset.action; if(act==='tab'){state.activeTab=a.dataset.tab;save();renderContent();} if(act==='fontDown'){state.fontSize=Math.max(14,state.fontSize-1);setTheme();save();} if(act==='fontUp'){state.fontSize=Math.min(20,state.fontSize+1);setTheme();save();} if(act==='toggleDark'){state.dark=!state.dark;setTheme();save();renderHeader();} if(act==='playFull')speak(textData.paragraphs.map(p=>p.target).join('\n'));
+ if(act==='speak'||act==='speakKaraoke')speak(decodeURIComponent(a.dataset.text),a.dataset.mark); if(act==='voiceSelect'){state.voiceURI=a.value;save();} if(act==='rate'){state.rate=+a.value;save();} if(act==='pitch'){state.pitch=+a.value;save();}
+ if(act==='toggleHide'){state.hideTranslations=!state.hideTranslations;renderContent();} if(act==='reveal'){a.classList.remove('blurred');} if(act==='selectWord'){state.selectedWord=a.dataset.word;renderContent();}
+ if(act==='flip'){state.flashFlipped=!state.flashFlipped;renderContent();} if(act==='nextFlash'){state.flashIndex=(state.flashIndex+1)%flashWords.length;state.flashFlipped=false;renderContent();} if(act==='prevFlash'){state.flashIndex=(state.flashIndex-1+flashWords.length)%flashWords.length;state.flashFlipped=false;renderContent();}
+ if(act==='known'){const w=flashWords[state.flashIndex]; if(mastery[w]!=='known'){state.xp+=2;} mastery[w]='known';state.reviewed.add(w);save();renderHeader();renderContent();} if(act==='review'){const w=flashWords[state.flashIndex]; mastery[w]='review';flashWords.push(w);state.reviewed.add(w);save();renderContent();}
+ if(act==='answer'){const idx='q'+state.quizIndex;if(!quizResults[idx]){quizResults[idx]={chosen:a.dataset.letter,correct:a.dataset.letter===textData.quiz.mcq[state.quizIndex].answer};if(quizResults[idx].correct)state.xp+=5;save();renderHeader();renderContent();}} if(act==='nextQuiz'){state.quizIndex=(state.quizIndex+1)%textData.quiz.mcq.length;renderContent();} if(act==='prevQuiz'){state.quizIndex=(state.quizIndex-1+textData.quiz.mcq.length)%textData.quiz.mcq.length;renderContent();}
+ if(act==='toggleBlank'){state.blankMode=state.blankMode==='typed'?'drag':'typed';renderContent();} if(act==='checkBlanks'){document.querySelectorAll('.blank-input').forEach(inp=>{const ok=inp.value.trim().toLowerCase()===inp.dataset.answer.toLowerCase();inp.classList.add(ok?'bg-emerald-100':'bg-red-100'); if(!ok)inp.value+=' → '+inp.dataset.answer;});document.querySelectorAll('.blank-drop').forEach(d=>{const ok=(d.textContent||'').trim().toLowerCase()===d.dataset.answer.toLowerCase();d.classList.add(ok?'bg-emerald-100':'bg-red-100'); if(!ok)d.textContent+=' → '+d.dataset.answer;});}
+ if(act==='nextConstruct'){state.constructIndex=(state.constructIndex+1)%textData.constructionSentences.length;renderContent();} if(act==='prevConstruct'){state.constructIndex=(state.constructIndex-1+textData.constructionSentences.length)%textData.constructionSentences.length;renderContent();} if(act==='showConstruct'){document.querySelector('.construct-zone').innerHTML=textData.constructionSentences[state.constructIndex].words.map(w=>`<span class="px-3 py-2 rounded-lg bg-emerald-100 text-emerald-900">${w}</span>`).join('');} if(act==='checkConstruct'){const zone=[...document.querySelectorAll('.construct-zone span')];const ans=textData.constructionSentences[state.constructIndex].words;zone.forEach((z,i)=>z.classList.add(z.textContent===ans[i]?'bg-emerald-100':'bg-red-100'));}
+ if(act==='record')startRecord(+a.dataset.index); if(act==='stopRecord')stopRecord(+a.dataset.index);
+}
+document.addEventListener('click',handleAction);document.addEventListener('change',handleAction);document.addEventListener('input',handleAction);
+document.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){const a=document.activeElement?.dataset?.action;if(a==='flip'){e.preventDefault();state.flashFlipped=!state.flashFlipped;renderContent();}} if(state.activeTab==='flashcards'&&e.key==='ArrowRight'){state.flashIndex=(state.flashIndex+1)%flashWords.length;renderContent();} if(state.activeTab==='flashcards'&&e.key==='ArrowLeft'){state.flashIndex=(state.flashIndex-1+flashWords.length)%flashWords.length;renderContent();}});
+document.addEventListener('drop',e=>{const drop=e.target.closest('.blank-drop,.construct-zone'); if(!drop)return; e.preventDefault();const t=e.dataTransfer.getData('text/plain'); if(drop.classList.contains('construct-zone'))drop.insertAdjacentHTML('beforeend',`<span class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700">${t}</span>`); else drop.textContent=t;});
+async function startRecord(i){try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});const rec=new MediaRecorder(stream);state.chunks[i]=[];rec.ondataavailable=e=>state.chunks[i].push(e.data);rec.onstop=()=>{const blob=new Blob(state.chunks[i],{type:'audio/webm'});const url=URL.createObjectURL(blob);document.getElementById('audio-'+i).innerHTML=`<p>Your Recording ▶</p><audio controls src="${url}"></audio>`;stream.getTracks().forEach(t=>t.stop());};state.recorders[i]=rec;rec.start();document.getElementById('stop-'+i)?.classList.remove('hidden');}catch(err){toast('Microphone permission is needed for recording.');}}
+function stopRecord(i){state.recorders[i]?.stop();document.getElementById('stop-'+i)?.classList.add('hidden');}
+function loadVoices(){state.voices=speechSynthesis.getVoices().filter(v=>v.lang.startsWith('de')||v.lang.startsWith('ar')||v.default);if(!state.voiceURI&&state.voices[0])state.voiceURI=(state.voices.find(v=>v.lang.startsWith('de'))||state.voices[0]).voiceURI;renderHeader();}
+setTheme();initDaily();loadVoices();speechSynthesis.onvoiceschanged=loadVoices;renderHeader();renderContent();
+</script>
+<script src="nav.js"></script>
+</body>
+</html>
